@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { motion } from "framer-motion";
 import {
   ChevronRight,
   Droplets,
@@ -103,54 +104,130 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px]" />
 
-        <div className="container-sns relative pt-16 pb-20 md:pt-24 md:pb-28">
-          <div className="max-w-3xl mx-auto text-center space-y-8">
-            {/* Tagline badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-surface border border-border text-sm text-text-secondary animate-fade-in">
-              <Shield className="w-4 h-4 text-primary" />
-              <span>Premium Car Care in Alexandria</span>
-            </div>
-
-            {/* Main heading */}
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-heading font-bold leading-[1.1] animate-fade-in-up">
-              <span className="text-text-primary">Care. </span>
-              <span className="chrome-text">Shine. </span>
-              <span className="text-primary">Defend.</span>
-            </h1>
-
-            {/* Subtitle */}
-            <p className="text-lg md:text-xl text-text-secondary max-w-xl mx-auto leading-relaxed animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
-              Professional car wash, detailing, ceramic coating, PPF &amp; window
-              tinting — with transparent pricing for your exact vehicle.
-            </p>
-
-            {/* Vehicle Selector */}
-            <div className="flex flex-col items-center gap-4 animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
-              <p className="text-sm text-text-muted">Select your vehicle type to see pricing:</p>
-              <VehicleSelector
-                selected={vehicleType}
-                onChange={setVehicleType}
-                size="lg"
-              />
-            </div>
-
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
-              <Link
-                href="/booking"
-                className="inline-flex items-center justify-center h-12 px-8 bg-primary hover:bg-primary-hover text-white font-semibold rounded-[4px] text-base transition-all duration-200 hover:shadow-lg hover:shadow-primary/20 gap-2"
+        <div className="container-sns relative pt-12 pb-20 md:pt-20 md:pb-28">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            {/* Left Column - Content */}
+            <motion.div 
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="lg:col-span-7 space-y-8 text-center lg:text-left flex flex-col items-center lg:items-start"
+            >
+              {/* Tagline badge */}
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-surface border border-border text-sm text-text-secondary"
               >
-                Book Your Session
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-              <Link
-                href="/services"
-                className="inline-flex items-center justify-center h-12 px-8 bg-surface-elevated hover:bg-surface-hover text-text-primary font-medium rounded-[4px] text-base transition-all duration-200 border border-border gap-2"
+                <Shield className="w-4 h-4 text-primary" />
+                <span>Premium Car Care in Alexandria</span>
+              </motion.div>
+
+              {/* Main heading */}
+              <motion.h1 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.6 }}
+                className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-heading font-bold leading-[1.1] text-center lg:text-left"
               >
-                Browse Services
-                <ChevronRight className="w-5 h-5" />
-              </Link>
-            </div>
+                <span className="text-text-primary">Care. </span>
+                <span className="chrome-text">Shine. </span>
+                <span className="text-primary">Defend.</span>
+              </motion.h1>
+
+              {/* Subtitle */}
+              <motion.p 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.6 }}
+                className="text-base md:text-lg text-text-secondary max-w-xl leading-relaxed text-center lg:text-left"
+              >
+                Professional car wash, detailing, ceramic coating, PPF &amp; window
+                tinting — with transparent pricing for your exact vehicle.
+              </motion.p>
+
+              {/* Vehicle Selector */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 0.6 }}
+                className="flex flex-col items-center lg:items-start gap-4 w-full"
+              >
+                <p className="text-sm text-text-muted">Select your vehicle type to see pricing:</p>
+                <VehicleSelector
+                  selected={vehicleType}
+                  onChange={setVehicleType}
+                  size="lg"
+                />
+              </motion.div>
+
+              {/* CTA Buttons */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6, duration: 0.6 }}
+                className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 w-full sm:w-auto"
+              >
+                <Link
+                  href="/booking"
+                  className="w-full sm:w-auto inline-flex items-center justify-center h-12 px-8 bg-primary hover:bg-primary-hover text-white font-semibold rounded-[4px] text-base transition-all duration-200 hover:shadow-lg hover:shadow-primary/20 gap-2"
+                >
+                  Book Your Session
+                  <ArrowRight className="w-5 h-5" />
+                </Link>
+                <Link
+                  href="/services"
+                  className="w-full sm:w-auto inline-flex items-center justify-center h-12 px-8 bg-surface-elevated hover:bg-surface-hover text-text-primary font-medium rounded-[4px] text-base transition-all duration-200 border border-border gap-2"
+                >
+                  Browse Services
+                  <ChevronRight className="w-5 h-5" />
+                </Link>
+              </motion.div>
+            </motion.div>
+
+            {/* Right Column - Visual Showcase */}
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, x: 30 }}
+              animate={{ opacity: 1, scale: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+              className="lg:col-span-5 flex justify-center items-center relative"
+            >
+              {/* Background glow behind image */}
+              <div className="absolute inset-0 bg-primary/10 rounded-full blur-[80px] w-72 h-72 m-auto" />
+              
+              {/* Floating glassmorphic frame */}
+              <motion.div 
+                animate={{ y: [0, -12, 0] }}
+                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+                className="relative z-10 p-4 md:p-6 rounded-[24px] border border-white/10 bg-surface/30 backdrop-blur-md shadow-2xl hover:border-primary/40 transition-all duration-500 group max-w-[400px] lg:max-w-full"
+              >
+                {/* Subtle rotating glow border */}
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-blue-500 rounded-[24px] opacity-10 group-hover:opacity-30 blur transition-all duration-700" />
+                
+                <div className="relative rounded-[16px] overflow-hidden bg-background/50 border border-border/50">
+                  <Image
+                    src="/hero-logo.png"
+                    alt="S.N.S Premium Car Care Logo"
+                    width={500}
+                    height={500}
+                    className="w-full h-auto object-contain scale-95 group-hover:scale-100 transition-transform duration-700 ease-out"
+                    priority
+                  />
+                  
+                  {/* Glassmorphic watermark tag */}
+                  <div className="absolute bottom-4 left-4 right-4 px-4 py-2.5 rounded-[12px] bg-background/70 backdrop-blur-md border border-white/10 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-semibold text-white tracking-wide uppercase">Swill N Spin</p>
+                      <p className="text-[10px] text-text-muted">Est. Alexandria</p>
+                    </div>
+                    <div className="px-2 py-1 rounded-[6px] bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold">
+                      PREMIUM
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
           </div>
         </div>
       </section>

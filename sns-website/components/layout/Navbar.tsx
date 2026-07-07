@@ -22,11 +22,11 @@ export function Navbar() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3 shrink-0">
           <Image
-            src="/logo.png"
+            src="/logo.jpg"
             alt="S.N.S Car Care"
             width={160}
             height={48}
-            className="h-10 md:h-12 w-auto object-contain"
+            className="h-10 md:h-12 w-auto object-contain rounded-[4px]"
             priority
           />
         </Link>
