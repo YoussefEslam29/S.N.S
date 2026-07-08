@@ -51,3 +51,22 @@ Updated [page.tsx](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns
   * AnimatePresence for smooth fade-in/fade-out of the lightbox overlays.
 * **Process Showcase**:
   * Redesigned the bottom section ("Watch Our Process") to highlight all 4 premium edits side-by-side with full hover-play capabilities.
+
+---
+
+## 5. Branded Loading Screen
+Updated [LoadingScreen.tsx](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/components/LoadingScreen.tsx) and [layout.tsx](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/app/layout.tsx):
+* **Asset**: Copied `gallary/LOADING_SCREEN ANIMATION.mp4` to `public/videos/loading-screen.mp4` — the 8-second car-cycling animation.
+* **Plan**: Full design spec documented in [Loading_screen.md](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/THE_PLANS/Loading_screen.md).
+* **Component** (`components/LoadingScreen.tsx`):
+  * Full-screen fixed overlay (`z-index: 9999`) placed at top of the `<body>` before the Navbar so it covers everything.
+  * Plays the car animation video (`autoPlay`, `muted`, `loop`, `playsInline`) centered in the screen.
+  * **Progress bar**: Fills from 0% → 100% over a minimum of 3 seconds, with a blue glow (`#3B82F6` with `box-shadow`), and a traveling shimmer effect.
+  * **Status messages**: Cycles through 4 branded messages ("Initializing premium experience...", "Loading services...", "Preparing your garage...", "Almost ready...") every 750ms.
+  * **Percentage counter**: Live `0%` → `100%` counter displayed in primary blue.
+  * **Brand elements**: S.N.S logo top-left, `PREMIUM` tag top-right, tagline `"Care. Shine. Defend."` at the bottom in tracking caps.
+  * **Decorative layers**: Chrome shimmer top/bottom edge lines, radial vignette around the video, corner glow blobs using brand primary color.
+  * **Dismiss logic**: Screen hides after **both** the minimum 3-second timer AND the `window.load` event have fired. A 9-second failsafe forces dismissal regardless.
+  * **Exit animation**: Smooth opacity fade-out (600ms) via Framer Motion `AnimatePresence`.
+  * **Accessibility**: Respects `prefers-reduced-motion` via the existing `globals.css` media query.
+
