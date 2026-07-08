@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./assets/logo.png" alt="S.N.S Logo" width="260"/>
+<img src="./gallery/1-LOGO S.N.S.png" alt="S.N.S Logo" width="260"/>
 
 # S.N.S — Swillnspin
 ### Professional Paint Protection Film & Car Care
