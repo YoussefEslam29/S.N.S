@@ -1,7 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import { MapPin, Phone, Mail, Clock } from "lucide-react";
+import { useLanguage } from "@/lib/i18n";
 
 export function Footer() {
+  const { t } = useLanguage();
+
   return (
     <footer className="border-t border-border bg-surface">
       <div className="container-sns py-12 md:py-16">
@@ -12,10 +17,9 @@ export function Footer() {
               S.N.S
             </h3>
             <p className="text-sm text-text-secondary leading-relaxed">
-              Care. Shine. Defend.
+              {t("footer.tagline")}
               <br />
-              Premium car wash, detailing, ceramic coating, PPF &amp; tinting in
-              Alexandria, Egypt.
+              {t("footer.description")}
             </p>
             <div className="flex gap-3 pt-2">
               <a
@@ -68,20 +72,20 @@ export function Footer() {
           {/* Quick Links */}
           <div className="space-y-4">
             <h4 className="text-sm font-semibold text-text-primary uppercase tracking-wider">
-              Quick Links
+              {t("footer.quickLinks")}
             </h4>
             <ul className="space-y-2">
               {[
-                { href: "/services", label: "Our Services" },
-                { href: "/booking", label: "Book Appointment" },
-                { href: "/gallery", label: "Gallery" },
+                { href: "/services", labelKey: "footer.ourServices" },
+                { href: "/booking", labelKey: "footer.bookAppointment" },
+                { href: "/gallery", labelKey: "nav.gallery" },
               ].map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
                     className="text-sm text-text-secondary hover:text-primary transition-colors"
                   >
-                    {link.label}
+                    {t(link.labelKey)}
                   </Link>
                 </li>
               ))}
@@ -91,7 +95,7 @@ export function Footer() {
           {/* Contact Info */}
           <div className="space-y-4">
             <h4 className="text-sm font-semibold text-text-primary uppercase tracking-wider">
-              Contact
+              {t("footer.contact")}
             </h4>
             <ul className="space-y-3">
               <li className="flex items-start gap-3">
@@ -123,23 +127,23 @@ export function Footer() {
           {/* Working Hours */}
           <div className="space-y-4">
             <h4 className="text-sm font-semibold text-text-primary uppercase tracking-wider">
-              Working Hours
+              {t("footer.workingHours")}
             </h4>
             <ul className="space-y-2">
               <li className="flex items-center gap-3">
                 <Clock className="w-4 h-4 text-primary shrink-0" />
                 <span className="text-sm text-text-secondary">
-                  Saturday – Thursday
+                  {t("footer.satToThu")}
                 </span>
               </li>
-              <li className="pl-7">
+              <li className="pl-7 rtl:pl-0 rtl:pr-7">
                 <span className="text-sm text-text-primary font-medium">
-                  2:00 PM – 12:00 AM
+                  {t("footer.hours")}
                 </span>
               </li>
-              <li className="pl-7">
+              <li className="pl-7 rtl:pl-0 rtl:pr-7">
                 <span className="text-sm text-error">
-                  Closed on Friday
+                  {t("footer.closedFriday")}
                 </span>
               </li>
             </ul>
@@ -152,7 +156,7 @@ export function Footer() {
               className="inline-flex items-center gap-2 mt-2 text-sm text-primary hover:text-primary-light transition-colors"
             >
               <MapPin className="w-4 h-4" />
-              View on Google Maps
+              {t("footer.viewOnMaps")}
             </a>
           </div>
         </div>
@@ -160,10 +164,10 @@ export function Footer() {
         {/* Bottom Bar */}
         <div className="mt-12 pt-6 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs text-text-muted">
-            © {new Date().getFullYear()} S.N.S (Swillnspin). All rights reserved.
+            © {new Date().getFullYear()} S.N.S (Swillnspin). {t("footer.allRights")}
           </p>
           <p className="text-xs text-text-muted">
-            Care. Shine. Defend.
+            {t("footer.tagline")}
           </p>
         </div>
       </div>

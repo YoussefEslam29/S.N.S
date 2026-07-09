@@ -3,6 +3,7 @@ import { Inter, Outfit, IBM_Plex_Sans_Arabic } from "next/font/google";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { LoadingScreen } from "@/components/LoadingScreen";
+import { LanguageProvider } from "@/lib/i18n";
 import "./globals.css";
 
 const inter = Inter({
@@ -64,10 +65,12 @@ export default function RootLayout({
       className={`${inter.variable} ${outfit.variable} ${ibmPlexArabic.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        <LoadingScreen />
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <LanguageProvider>
+          <LoadingScreen />
+          <Navbar />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </LanguageProvider>
       </body>
     </html>
   );

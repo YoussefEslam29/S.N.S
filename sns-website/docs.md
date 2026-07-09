@@ -6,9 +6,9 @@ This document logs the recent visual upgrades and feature additions made to the 
 
 ## 1. Brand Assets & Layout Config
 We updated the core logo elements and browser metadata icons to use the official S.N.S logo files:
-* **Browser Tab Icon (Favicon)**: Copied `gallary/2-LOGO S.N.S.jpg` to [app/icon.jpg](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/app/icon.jpg). Deleted the default `favicon.ico` so the browser resolves this new premium icon automatically.
-* **Header & Navbar Logo**: Copied `gallary/2-LOGO S.N.S.jpg` to `public/logo.jpg`. Updated [Navbar.tsx](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/components/layout/Navbar.tsx) to fetch `/logo.jpg` and added rounded edges for a clean fit.
-* **Hero Image**: Copied `gallary/1-LOGO S.N.S.png` to `public/hero-logo.png`.
+* **Browser Tab Icon (Favicon)**: Copied `gallery/2-LOGO S.N.S.jpg` to [app/icon.jpg](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/app/icon.jpg). Deleted the default `favicon.ico` so the browser resolves this new premium icon automatically.
+* **Header & Navbar Logo**: Copied `gallery/2-LOGO S.N.S.jpg` to `public/logo.jpg`. Updated [Navbar.tsx](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/components/layout/Navbar.tsx) to fetch `/logo.jpg` and added rounded edges for a clean fit.
+* **Hero Image**: Copied `gallery/1-LOGO S.N.S.png` to `public/hero-logo.png`.
 
 ---
 
@@ -56,7 +56,7 @@ Updated [page.tsx](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns
 
 ## 5. Branded Loading Screen
 Updated [LoadingScreen.tsx](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/components/LoadingScreen.tsx) and [layout.tsx](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/app/layout.tsx):
-* **Asset**: Copied `gallary/LOADING_SCREEN ANIMATION.mp4` to `public/videos/loading-screen.mp4` — the 8-second car-cycling animation.
+* **Asset**: Copied `gallery/LOADING_SCREEN ANIMATION.mp4` to `public/videos/loading-screen.mp4` — the 8-second car-cycling animation.
 * **Plan**: Full design spec documented in [Loading_screen.md](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/THE_PLANS/Loading_screen.md).
 * **Component** (`components/LoadingScreen.tsx`):
   * Full-screen fixed overlay (`z-index: 9999`) placed at top of the `<body>` before the Navbar so it covers everything.
@@ -70,3 +70,20 @@ Updated [LoadingScreen.tsx](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/
   * **Exit animation**: Smooth opacity fade-out (600ms) via Framer Motion `AnimatePresence`.
   * **Accessibility**: Respects `prefers-reduced-motion` via the existing `globals.css` media query.
 
+---
+
+## 6. Audit & Fixes (fix_claude.md Plan)
+Implemented the quality fixes detailed in [fix_claude.md](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/THE_PLANS/fix_claude.md):
+* **Crisp SVG Favicon**: Created [icon.svg](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/app/icon.svg) to serve as a clean vector tab icon. Removed `icon.jpg` to avoid resolution issues.
+* **Responsive DOM Text Logo**: Replaced navbar logo image with a styled text-based logo component ("S.N.S Car Care") using brand colors and Outfit typography, avoiding mudded or squeezed illustration layouts.
+* **Developer README**: Created a detailed setup guide at [README.md](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/README.md) containing prerequisites, environmental variables, quickstart commands, and directory layouts.
+* **Git Large File Storage (LFS)**: Initialized Git LFS and configured tracking rules for all `*.mp4` assets to prevent committing large binary files to core Git history.
+* **Folder Structure Cleanups**: Misspelled `gallary` directory renamed to `gallery` at repo root. All plan and document references have been updated.
+* **Environment Variables**: Enhanced [.env.example](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/.env.example) to fully document `MONGODB_URI`, `NEXTAUTH_SECRET`, and `NEXTAUTH_URL` placeholders.
+* **Bilingual English & Arabic Routing**:
+  * Created i18n context provider in [i18n.tsx](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/lib/i18n.tsx).
+  * Automatically coordinates text-direction (`dir="rtl"` / `dir="ltr"`) and page language tag based on active locale.
+  * Added a language switcher button to [Navbar.tsx](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/components/layout/Navbar.tsx) (active on desktop and mobile).
+  * Translated main homepage text strings (hero section, services menu titles, review tags, and call-to-actions), gallery page content, and the site footer layout.
+* **Leftover AI Tooling Files**: Deleted the instructions folders (`SKILLS/`), `AGENTS.md`, and `CLAUDE.md` to keep the codebase focused on the website implementation.
+* **License Preservation**: Confirmed and retained the GPLv3 license terms in the repo.

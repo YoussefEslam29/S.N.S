@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { VehicleSelector, type VehicleType } from "@/components/services/VehicleSelector";
 import { formatPrice } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n";
 
 /* ─── Service category data (static for homepage) ─── */
 const serviceCategories = [
@@ -95,6 +96,7 @@ const valueProps = [
 
 export default function HomePage() {
   const [vehicleType, setVehicleType] = useState<VehicleType>("sedan");
+  const { t } = useLanguage();
 
   return (
     <>
@@ -121,7 +123,7 @@ export default function HomePage() {
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-surface border border-border text-sm text-text-secondary"
               >
                 <Shield className="w-4 h-4 text-primary" />
-                <span>Premium Car Care in Alexandria</span>
+                <span>{t("hero.badge")}</span>
               </motion.div>
 
               {/* Main heading */}
@@ -131,9 +133,9 @@ export default function HomePage() {
                 transition={{ delay: 0.3, duration: 0.6 }}
                 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-heading font-bold leading-[1.1] text-center lg:text-left"
               >
-                <span className="text-text-primary">Care. </span>
-                <span className="chrome-text">Shine. </span>
-                <span className="text-primary">Defend.</span>
+                <span className="text-text-primary">{t("hero.care")}</span>
+                <span className="chrome-text">{t("hero.shine")}</span>
+                <span className="text-primary">{t("hero.defend")}</span>
               </motion.h1>
 
               {/* Subtitle */}
@@ -143,8 +145,7 @@ export default function HomePage() {
                 transition={{ delay: 0.4, duration: 0.6 }}
                 className="text-base md:text-lg text-text-secondary max-w-xl leading-relaxed text-center lg:text-left"
               >
-                Professional car wash, detailing, ceramic coating, PPF &amp; window
-                tinting — with transparent pricing for your exact vehicle.
+                {t("hero.subtitle")}
               </motion.p>
 
               {/* Vehicle Selector */}
@@ -154,7 +155,7 @@ export default function HomePage() {
                 transition={{ delay: 0.5, duration: 0.6 }}
                 className="flex flex-col items-center lg:items-start gap-4 w-full"
               >
-                <p className="text-sm text-text-muted">Select your vehicle type to see pricing:</p>
+                <p className="text-sm text-text-muted">{t("hero.vehiclePrompt")}</p>
                 <VehicleSelector
                   selected={vehicleType}
                   onChange={setVehicleType}
@@ -173,14 +174,14 @@ export default function HomePage() {
                   href="/booking"
                   className="w-full sm:w-auto inline-flex items-center justify-center h-12 px-8 bg-primary hover:bg-primary-hover text-white font-semibold rounded-[4px] text-base transition-all duration-200 hover:shadow-lg hover:shadow-primary/20 gap-2"
                 >
-                  Book Your Session
+                  {t("hero.bookSession")}
                   <ArrowRight className="w-5 h-5" />
                 </Link>
                 <Link
                   href="/services"
                   className="w-full sm:w-auto inline-flex items-center justify-center h-12 px-8 bg-surface-elevated hover:bg-surface-hover text-text-primary font-medium rounded-[4px] text-base transition-all duration-200 border border-border gap-2"
                 >
-                  Browse Services
+                  {t("hero.browseServices")}
                   <ChevronRight className="w-5 h-5" />
                 </Link>
               </motion.div>
@@ -218,11 +219,11 @@ export default function HomePage() {
                   {/* Glassmorphic watermark tag */}
                   <div className="absolute bottom-4 left-4 right-4 px-4 py-2.5 rounded-[12px] bg-background/70 backdrop-blur-md border border-white/10 flex items-center justify-between">
                     <div>
-                      <p className="text-xs font-semibold text-white tracking-wide uppercase">Swill N Spin</p>
-                      <p className="text-[10px] text-text-muted">Est. Alexandria</p>
+                      <p className="text-xs font-semibold text-white tracking-wide uppercase">{t("hero.swillNSpin")}</p>
+                      <p className="text-[10px] text-text-muted">{t("hero.estAlexandria")}</p>
                     </div>
                     <div className="px-2 py-1 rounded-[6px] bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold">
-                      PREMIUM
+                      {t("hero.premium")}
                     </div>
                   </div>
                 </div>
@@ -237,11 +238,10 @@ export default function HomePage() {
         <div className="container-sns">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-heading font-bold text-text-primary mb-4">
-              Our Services
+              {t("services.title")}
             </h2>
             <p className="text-text-secondary max-w-lg mx-auto">
-              Everything your car needs — from a quick wash to full paint protection.
-              Prices shown for your selected vehicle type.
+              {t("services.subtitle")}
             </p>
 
             {/* Vehicle selector inline */}
@@ -288,7 +288,7 @@ export default function HomePage() {
                     <div className="flex items-end justify-between pt-2">
                       <div>
                         <p className="text-xs text-text-muted uppercase tracking-wider">
-                          From
+                          {t("services.from")}
                         </p>
                         <p className="text-2xl font-heading font-bold text-primary">
                           {formatPrice(price)}
@@ -296,14 +296,14 @@ export default function HomePage() {
                       </div>
                       {service.hasInstallments && (
                         <span className="px-2 py-1 text-xs bg-amber-500/10 text-amber-400 rounded-[4px] border border-amber-500/20">
-                          Installments Available
+                          {t("services.installments")}
                         </span>
                       )}
                     </div>
 
                     {/* Arrow */}
                     <div className="flex items-center gap-1 text-sm text-text-muted group-hover:text-primary transition-colors">
-                      View details
+                      {t("services.viewDetails")}
                       <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                     </div>
                   </div>
@@ -319,11 +319,10 @@ export default function HomePage() {
         <div className="container-sns">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-heading font-bold text-text-primary mb-4">
-              Why Choose S.N.S?
+              {t("why.title")}
             </h2>
             <p className="text-text-secondary max-w-lg mx-auto">
-              We&apos;re not just another car wash — we&apos;re paint protection experts
-              with the polish of a high-end brand.
+              {t("why.subtitle")}
             </p>
           </div>
 
@@ -357,7 +356,7 @@ export default function HomePage() {
         <div className="container-sns">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-heading font-bold text-text-primary mb-4">
-              What Our Customers Say
+              {t("reviews.title")}
             </h2>
             <div className="flex items-center justify-center gap-1 mb-2">
               {[...Array(5)].map((_, i) => (
@@ -365,7 +364,7 @@ export default function HomePage() {
               ))}
             </div>
             <p className="text-text-secondary">
-              Verified reviews from Google
+              {t("reviews.verified")}
             </p>
           </div>
 
@@ -421,7 +420,7 @@ export default function HomePage() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary-light transition-colors"
             >
-              See all reviews on Google
+              {t("reviews.seeAll")}
               <ArrowRight className="w-4 h-4" />
             </a>
           </div>
@@ -435,19 +434,18 @@ export default function HomePage() {
 
         <div className="container-sns relative text-center space-y-8">
           <h2 className="text-3xl md:text-5xl font-heading font-bold text-text-primary">
-            Ready to give your car
+            {t("cta.title1")}
             <br />
-            <span className="text-primary">the care it deserves?</span>
+            <span className="text-primary">{t("cta.title2")}</span>
           </h2>
           <p className="text-lg text-text-secondary max-w-md mx-auto">
-            Book your session now — pick your service, choose a time, and show up.
-            It&apos;s that simple.
+            {t("cta.subtitle")}
           </p>
           <Link
             href="/booking"
             className="inline-flex items-center justify-center h-14 px-10 bg-primary hover:bg-primary-hover text-white font-bold rounded-[4px] text-lg transition-all duration-200 hover:shadow-lg hover:shadow-primary/25 gap-2"
           >
-            Book Now
+            {t("nav.bookNow")}
             <ArrowRight className="w-5 h-5" />
           </Link>
         </div>

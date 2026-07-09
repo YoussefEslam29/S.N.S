@@ -4,6 +4,7 @@ import React, { useState, useRef } from "react";
 import { X, ChevronLeft, ChevronRight, Play, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLanguage } from "@/lib/i18n";
 
 /* ─── Merged Gallery Items (Images + Videos) ─── */
 interface GalleryItem {
@@ -106,12 +107,12 @@ const galleryItems: GalleryItem[] = [
 ];
 
 const categories = [
-  { id: "all", label: "All Work" },
+  { id: "all", label: "All Works" },
   { id: "videos", label: "Videos" },
-  { id: "wash", label: "Car Wash" },
+  { id: "wash", label: "Premium Wash" },
   { id: "detailing", label: "Detailing" },
-  { id: "ceramic-coating", label: "Ceramic Coating" },
   { id: "ppf", label: "PPF" },
+  { id: "ceramic-coating", label: "Ceramic Coating" },
   { id: "tinting", label: "Tinting" },
 ];
 
@@ -119,6 +120,7 @@ const categories = [
 function GalleryVideoCard({ item, onClick, index }: { item: GalleryItem; onClick: () => void; index: number }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const { t } = useLanguage();
 
   const handleMouseEnter = async () => {
     setIsPlaying(true);
@@ -172,7 +174,7 @@ function GalleryVideoCard({ item, onClick, index }: { item: GalleryItem; onClick
       <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/40 to-transparent flex flex-col justify-end p-5 z-10">
         <div className="space-y-1">
           <span className="inline-flex px-2 py-0.5 text-[9px] bg-primary/20 text-primary border border-primary/30 rounded-[4px] font-bold uppercase tracking-wider mb-2">
-            {item.category.replace("-", " ")}
+            {t("gallery." + (item.category === "ceramic-coating" ? "ceramicCoating" : item.category))}
           </span>
           <h3 className="text-sm font-semibold text-text-primary group-hover:text-primary transition-colors">
             {item.title}
@@ -186,7 +188,7 @@ function GalleryVideoCard({ item, onClick, index }: { item: GalleryItem; onClick
       {/* Hover preview tooltip */}
       {!isPlaying && (
         <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-black/60 text-[8px] text-white/80 font-medium opacity-0 group-hover:opacity-100 transition-opacity z-20">
-          Hover to Preview
+          {t("gallery.hoverToPreview")}
         </div>
       )}
     </motion.div>
@@ -195,6 +197,7 @@ function GalleryVideoCard({ item, onClick, index }: { item: GalleryItem; onClick
 
 /* ─── Image Card Subcomponent ─── */
 function GalleryImageCard({ item, onClick, index }: { item: GalleryItem; onClick: () => void; index: number }) {
+  const { t } = useLanguage();
   return (
     <motion.div
       layout
@@ -215,7 +218,7 @@ function GalleryImageCard({ item, onClick, index }: { item: GalleryItem; onClick
       <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/40 to-transparent flex flex-col justify-end p-5 z-10">
         <div className="space-y-1">
           <span className="inline-flex px-2 py-0.5 text-[9px] bg-surface-elevated text-text-secondary border border-border rounded-[4px] font-medium uppercase tracking-wider mb-2">
-            {item.category.replace("-", " ")}
+            {t("gallery." + (item.category === "ceramic-coating" ? "ceramicCoating" : item.category))}
           </span>
           <h3 className="text-sm font-semibold text-text-primary group-hover:text-primary transition-colors">
             {item.title}
@@ -233,6 +236,20 @@ function GalleryImageCard({ item, onClick, index }: { item: GalleryItem; onClick
 export default function GalleryPage() {
   const [filter, setFilter] = useState("all");
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const { t } = useLanguage();
+
+  const getCategoryLabel = (id: string) => {
+    switch (id) {
+      case "all": return t("gallery.allWork");
+      case "videos": return t("gallery.videos");
+      case "wash": return t("gallery.carWash");
+      case "detailing": return t("gallery.detailing");
+      case "ceramic-coating": return t("gallery.ceramicCoating");
+      case "ppf": return t("gallery.ppf");
+      case "tinting": return t("gallery.tinting");
+      default: return id;
+    }
+  };
 
   const filtered = filter === "all"
     ? galleryItems
@@ -265,7 +282,7 @@ export default function GalleryPage() {
             className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Showcase & Portfolio</span>
+            <span>{t("gallery.badge")}</span>
           </motion.div>
           <motion.h1
             initial={{ opacity: 0, y: 15 }}
@@ -273,7 +290,7 @@ export default function GalleryPage() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="text-3xl md:text-5xl font-heading font-bold text-text-primary tracking-tight"
           >
-            Our Work Gallery
+            {t("gallery.title")}
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 15 }}
@@ -281,7 +298,7 @@ export default function GalleryPage() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-text-secondary max-w-lg mx-auto text-sm md:text-base"
           >
-            Real transformations on premium vehicles. Select categories or watch our interactive video edits to see the S.N.S finish.
+            {t("gallery.subtitle")}
           </motion.p>
         </div>
 
@@ -303,7 +320,7 @@ export default function GalleryPage() {
                   : "bg-surface border-border text-text-secondary hover:text-text-primary hover:bg-surface-elevated hover:border-border-hover"
               )}
             >
-              {cat.label}
+              {getCategoryLabel(cat.id)}
             </button>
           ))}
         </motion.div>
@@ -341,7 +358,7 @@ export default function GalleryPage() {
             animate={{ opacity: 1 }}
             className="text-center py-24 bg-surface/30 border border-border border-dashed rounded-[8px]"
           >
-            <p className="text-text-muted text-sm">No showcase items in this category yet.</p>
+            <p className="text-text-muted text-sm">{t("gallery.noItems")}</p>
           </motion.div>
         )}
 
@@ -355,10 +372,10 @@ export default function GalleryPage() {
         >
           <div className="text-center mb-12 space-y-2">
             <h2 className="text-2xl md:text-3.5xl font-heading font-bold text-text-primary">
-              Watch Our Process
+              {t("gallery.watchProcess")}
             </h2>
             <p className="text-text-secondary text-sm max-w-md mx-auto">
-              Hover on the screens below to preview our work or click to watch the full cinematic edit.
+              {t("gallery.watchSubtitle")}
             </p>
           </div>
 
@@ -436,7 +453,7 @@ export default function GalleryPage() {
                       {filtered[lightboxIndex]?.title}
                     </p>
                     <p className="text-[11px] text-text-muted/60 mt-1">
-                      High-resolution photo showcase coming soon
+                      {t("gallery.comingSoon")}
                     </p>
                   </div>
                 )}
@@ -445,7 +462,7 @@ export default function GalleryPage() {
               {/* Title & Description Overlay Card */}
               <div className="text-center bg-surface/70 backdrop-blur-md p-5 rounded-[12px] border border-border max-w-xl mx-auto">
                 <span className="inline-flex px-2 py-0.5 text-[9px] bg-primary/20 text-primary border border-primary/30 rounded-[4px] font-bold uppercase tracking-wider mb-2">
-                  {filtered[lightboxIndex]?.category.replace("-", " ")}
+                  {t("gallery." + (filtered[lightboxIndex]?.category === "ceramic-coating" ? "ceramicCoating" : filtered[lightboxIndex]?.category))}
                 </span>
                 <h3 className="text-base md:text-lg font-semibold text-text-primary">
                   {filtered[lightboxIndex]?.title}

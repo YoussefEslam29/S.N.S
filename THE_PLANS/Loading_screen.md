@@ -97,7 +97,7 @@ Create `sns-website/components/LoadingScreen.tsx` — a client component with:
 Wrap the main body with the `LoadingScreen` component. The loading screen renders above all content using `position: fixed` and `z-index: 9999`.
 
 ### Asset: Copy Video
-Copy `gallary/LOADING_SCREEN ANIMATION.mp4` → `public/videos/loading-screen.mp4`
+Copy `gallery/LOADING_SCREEN ANIMATION.mp4` → `public/videos/loading-screen.mp4`
 
 ### State Logic (in `LoadingScreen.tsx`)
 ```
