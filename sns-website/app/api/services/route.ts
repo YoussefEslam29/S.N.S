@@ -5,10 +5,22 @@ import { connectDB } from "@/lib/db";
 import { Service } from "@/models/Service";
 import { auth } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url);
+    const showAll = searchParams.get("all") === "true";
+
+    // If requesting all (including inactive), require auth
+    if (showAll) {
+      const session = await auth();
+      if (!session) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+    }
+
     await connectDB();
-    const services = await Service.find({ isActive: true })
+    const filter = showAll ? {} : { isActive: true };
+    const services = await Service.find(filter)
       .select("-__v")
       .sort({ category: 1, order: 1 })
       .lean();

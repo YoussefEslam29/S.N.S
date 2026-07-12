@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Droplets,
@@ -9,8 +9,8 @@ import {
   Film,
   Sun,
   Clock,
-  ChevronRight,
   ArrowRight,
+  Loader2,
 } from "lucide-react";
 import { VehicleSelector, type VehicleType } from "@/components/services/VehicleSelector";
 import { formatPrice } from "@/lib/utils";
@@ -27,119 +27,47 @@ const categoryTabs: { id: ServiceCategory; label: string; icon: typeof Droplets 
   { id: "tinting", label: "Tinting", icon: Sun },
 ];
 
-/* ─── Full service list with pricing ─── */
-const services = [
-  // Car Wash
-  {
-    id: "wash-basic",
-    category: "wash" as const,
-    name: "Inside & Outside Wash",
-    description: "Complete interior vacuuming and exterior hand wash. The essential clean for your car.",
-    pricing: { sedan: 300, suv: 400, truck: 500 },
-    duration: 60,
-    icon: Droplets,
-  },
-  {
-    id: "wash-detailed",
-    category: "wash" as const,
-    name: "Wash + Chemical Wiping",
-    description: "Full wash plus detailed interior chemical wiping for a deeper clean. Includes dashboard, door panels, and seat care.",
-    pricing: { sedan: 400, suv: 550, truck: 700 },
-    duration: 90,
-    icon: Droplets,
-  },
-  {
-    id: "wash-premium",
-    category: "wash" as const,
-    name: "Premium Wash + Motor Cleaning",
-    description: "Everything in the chemical wash, plus professional motor bay cleaning with specialized chemicals.",
-    pricing: { sedan: 500, suv: 700, truck: 900 },
-    duration: 120,
-    icon: Droplets,
-  },
-  // Detailing
-  {
-    id: "detail-interior",
-    category: "detailing" as const,
-    name: "Full Interior Detailing",
-    description: "Deep steam cleaning, leather conditioning, carpet extraction, and full interior restoration.",
-    pricing: { sedan: 800, suv: 1100, truck: 1400 },
-    duration: 180,
-    icon: Sparkles,
-  },
-  {
-    id: "detail-exterior",
-    category: "detailing" as const,
-    name: "Exterior Polish & Detail",
-    description: "Paint correction, clay bar treatment, machine polishing, and sealant application for a mirror finish.",
-    pricing: { sedan: 1200, suv: 1600, truck: 2000 },
-    duration: 240,
-    icon: Sparkles,
-  },
-  // Ceramic Coating
-  {
-    id: "ceramic-standard",
-    category: "ceramic-coating" as const,
-    name: "Ceramic Coating — Standard",
-    description: "Single-layer ceramic coating for up to 2 years of hydrophobic protection and UV resistance.",
-    pricing: { sedan: 3000, suv: 4000, truck: 5000 },
-    duration: 480,
-    icon: Shield,
-  },
-  {
-    id: "ceramic-premium",
-    category: "ceramic-coating" as const,
-    name: "Ceramic Coating — Premium",
-    description: "Multi-layer ceramic coating for 3-5 years of protection. Includes paint correction prep.",
-    pricing: { sedan: 5000, suv: 7000, truck: 9000 },
-    duration: 720,
-    icon: Shield,
-  },
-  // PPF
-  {
-    id: "ppf-partial",
-    category: "ppf" as const,
-    name: "PPF — Front End Package",
-    description: "Paint protection film on hood, front bumper, fenders, and mirrors. Protects against road chips.",
-    pricing: { sedan: 15000, suv: 20000, truck: 25000 },
-    duration: 1440,
-    icon: Film,
-    installmentsAllowed: true,
-  },
-  {
-    id: "ppf-full",
-    category: "ppf" as const,
-    name: "PPF — Full Body Wrap",
-    description: "Complete paint protection film coverage. The ultimate defense for your entire vehicle.",
-    pricing: { sedan: 35000, suv: 45000, truck: 55000 },
-    duration: 2880,
-    icon: Film,
-    installmentsAllowed: true,
-  },
-  // Tinting
-  {
-    id: "tint-standard",
-    category: "tinting" as const,
-    name: "Window Tinting — Standard",
-    description: "Quality window film with UV protection and heat rejection. Choose your darkness level.",
-    pricing: { sedan: 1500, suv: 2000, truck: 2500 },
-    duration: 120,
-    icon: Sun,
-  },
-  {
-    id: "tint-ceramic",
-    category: "tinting" as const,
-    name: "Window Tinting — Ceramic",
-    description: "Premium ceramic window film for maximum heat rejection without reducing visibility.",
-    pricing: { sedan: 3000, suv: 4000, truck: 5000 },
-    duration: 180,
-    icon: Sun,
-  },
-];
+const categoryIcons: Record<string, typeof Droplets> = {
+  wash: Droplets,
+  detailing: Sparkles,
+  "ceramic-coating": Shield,
+  ppf: Film,
+  tinting: Sun,
+};
+
+interface ApiService {
+  _id: string;
+  name: { en: string; ar: string };
+  description: { en: string; ar: string };
+  category: string;
+  pricing: { sedan: number; suv: number; truck: number };
+  duration: number;
+  installmentsAllowed: boolean;
+  maxInstallments: number;
+}
 
 export default function ServicesPage() {
   const [vehicleType, setVehicleType] = useState<VehicleType>("sedan");
   const [activeCategory, setActiveCategory] = useState<ServiceCategory>("all");
+  const [services, setServices] = useState<ApiService[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchServices() {
+      try {
+        const res = await fetch("/api/services");
+        if (!res.ok) throw new Error("Failed to fetch");
+        const data = await res.json();
+        setServices(data.data ?? []);
+      } catch {
+        // Fallback: empty state
+        setServices([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchServices();
+  }, []);
 
   const filteredServices =
     activeCategory === "all"
@@ -190,77 +118,92 @@ export default function ServicesPage() {
           })}
         </div>
 
+        {/* Loading */}
+        {loading && (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-6 h-6 text-primary animate-spin" />
+          </div>
+        )}
+
         {/* Services Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredServices.map((service, i) => {
-            const Icon = service.icon;
-            const price = service.pricing[vehicleType];
-            const hours = Math.floor(service.duration / 60);
-            const mins = service.duration % 60;
-            const durationStr = hours > 0
-              ? `${hours}h${mins > 0 ? ` ${mins}m` : ""}`
-              : `${mins}m`;
+        {!loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredServices.map((service, i) => {
+              const Icon = categoryIcons[service.category] || Sparkles;
+              const price = service.pricing[vehicleType];
+              const hours = Math.floor(service.duration / 60);
+              const mins = service.duration % 60;
+              const durationStr = hours > 0
+                ? `${hours}h${mins > 0 ? ` ${mins}m` : ""}`
+                : `${mins}m`;
 
-            return (
-              <div
-                key={service.id}
-                className="group flex flex-col rounded-[4px] border border-border bg-surface hover:border-primary/30 transition-all duration-300 animate-fade-in-up overflow-hidden"
-                style={{ animationDelay: `${i * 0.05}s` }}
-              >
-                <div className="p-6 flex-1 space-y-4">
-                  {/* Header */}
-                  <div className="flex items-start justify-between">
-                    <div className="w-10 h-10 flex items-center justify-center rounded-[4px] bg-primary/10">
-                      <Icon className="w-5 h-5 text-primary" />
+              return (
+                <div
+                  key={service._id}
+                  className="group flex flex-col rounded-[4px] border border-border bg-surface hover:border-primary/30 transition-all duration-300 animate-fade-in-up overflow-hidden"
+                  style={{ animationDelay: `${i * 0.05}s` }}
+                >
+                  <div className="p-6 flex-1 space-y-4">
+                    {/* Header */}
+                    <div className="flex items-start justify-between">
+                      <div className="w-10 h-10 flex items-center justify-center rounded-[4px] bg-primary/10">
+                        <Icon className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-text-muted">
+                        <Clock className="w-3.5 h-3.5" />
+                        {durationStr}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-text-muted">
-                      <Clock className="w-3.5 h-3.5" />
-                      {durationStr}
-                    </div>
-                  </div>
 
-                  {/* Content */}
-                  <div>
-                    <h3 className="text-lg font-semibold text-text-primary mb-2">
-                      {service.name}
-                    </h3>
-                    <p className="text-sm text-text-secondary leading-relaxed">
-                      {service.description}
-                    </p>
-                  </div>
-
-                  {/* Badges */}
-                  {"installmentsAllowed" in service && service.installmentsAllowed && (
-                    <span className="inline-flex items-center px-2 py-1 text-xs bg-amber-500/10 text-amber-400 rounded-[4px] border border-amber-500/20">
-                      Installments Available (3 payments)
-                    </span>
-                  )}
-                </div>
-
-                {/* Footer with price & CTA */}
-                <div className="p-6 pt-0 mt-auto">
-                  <div className="flex items-end justify-between pt-4 border-t border-border">
+                    {/* Content */}
                     <div>
-                      <p className="text-xs text-text-muted uppercase tracking-wider">
-                        Price ({vehicleType})
-                      </p>
-                      <p className="text-xl font-heading font-bold text-primary">
-                        {formatPrice(price)}
+                      <h3 className="text-lg font-semibold text-text-primary mb-2">
+                        {service.name.en}
+                      </h3>
+                      <p className="text-sm text-text-secondary leading-relaxed">
+                        {service.description.en}
                       </p>
                     </div>
-                    <Link
-                      href={`/booking?service=${service.id}&vehicle=${vehicleType}`}
-                      className="inline-flex items-center gap-1 h-9 px-4 bg-primary hover:bg-primary-hover text-white text-sm font-medium rounded-[4px] transition-colors"
-                    >
-                      Book
-                      <ArrowRight className="w-4 h-4" />
-                    </Link>
+
+                    {/* Badges */}
+                    {service.installmentsAllowed && (
+                      <span className="inline-flex items-center px-2 py-1 text-xs bg-amber-500/10 text-amber-400 rounded-[4px] border border-amber-500/20">
+                        Installments Available ({service.maxInstallments} payments)
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Footer with price & CTA */}
+                  <div className="p-6 pt-0 mt-auto">
+                    <div className="flex items-end justify-between pt-4 border-t border-border">
+                      <div>
+                        <p className="text-xs text-text-muted uppercase tracking-wider">
+                          Price ({vehicleType})
+                        </p>
+                        <p className="text-xl font-heading font-bold text-primary">
+                          {formatPrice(price)}
+                        </p>
+                      </div>
+                      <Link
+                        href={`/booking?service=${service._id}&vehicle=${vehicleType}`}
+                        className="inline-flex items-center gap-1 h-9 px-4 bg-primary hover:bg-primary-hover text-white text-sm font-medium rounded-[4px] transition-colors"
+                      >
+                        Book
+                        <ArrowRight className="w-4 h-4" />
+                      </Link>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
+
+        {!loading && filteredServices.length === 0 && (
+          <div className="py-12 text-center text-text-muted text-sm">
+            No services available in this category.
+          </div>
+        )}
       </div>
     </div>
   );

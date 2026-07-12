@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
 import { Booking } from "@/models/Booking";
+import { TimeSlot } from "@/models/TimeSlot";
 import { auth } from "@/lib/auth";
 
 export async function GET(
@@ -77,9 +78,22 @@ export async function PATCH(
       update.notes = String(body.notes).trim().slice(0, 1000);
     }
 
+    // If cancelling, decrement TimeSlot capacity
+    if (body.status === "cancelled") {
+      const existingBooking = await Booking.findById(id).select("date timeSlot status").lean();
+      if (existingBooking && existingBooking.status !== "cancelled") {
+        const bookingDate = new Date(existingBooking.date);
+        bookingDate.setHours(0, 0, 0, 0);
+        await TimeSlot.findOneAndUpdate(
+          { date: bookingDate, time: existingBooking.timeSlot },
+          { $inc: { currentBookings: -1 } }
+        );
+      }
+    }
+
     const booking = await Booking.findByIdAndUpdate(id, update, { new: true })
       .populate("customer", "name phone")
-      .populate("service", "name category")
+      .populate("service", "name category pricing")
       .select("-__v")
       .lean();
 

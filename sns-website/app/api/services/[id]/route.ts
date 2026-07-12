@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
 import { Service } from "@/models/Service";
+import { PriceHistory } from "@/models/PriceHistory";
 import { auth } from "@/lib/auth";
 
 export async function GET(
@@ -61,6 +62,11 @@ export async function PATCH(
       update.category = body.category;
     }
 
+    const hasPricingChange =
+      body.pricing?.sedan !== undefined ||
+      body.pricing?.suv !== undefined ||
+      body.pricing?.truck !== undefined;
+
     if (body.pricing?.sedan !== undefined) update["pricing.sedan"] = Number(body.pricing.sedan);
     if (body.pricing?.suv !== undefined) update["pricing.suv"] = Number(body.pricing.suv);
     if (body.pricing?.truck !== undefined) update["pricing.truck"] = Number(body.pricing.truck);
@@ -69,6 +75,27 @@ export async function PATCH(
     if (body.order !== undefined) update.order = Number(body.order);
     if (body.installmentsAllowed !== undefined) update.installmentsAllowed = !!body.installmentsAllowed;
     if (body.maxInstallments !== undefined) update.maxInstallments = Math.min(Math.max(Number(body.maxInstallments), 1), 4);
+
+    // Save price history before updating if pricing changed
+    if (hasPricingChange) {
+      const existingService = await Service.findById(id).select("pricing").lean();
+      if (existingService) {
+        await PriceHistory.create({
+          service: id,
+          previousPricing: {
+            sedan: existingService.pricing.sedan,
+            suv: existingService.pricing.suv,
+            truck: existingService.pricing.truck,
+          },
+          newPricing: {
+            sedan: body.pricing?.sedan !== undefined ? Number(body.pricing.sedan) : existingService.pricing.sedan,
+            suv: body.pricing?.suv !== undefined ? Number(body.pricing.suv) : existingService.pricing.suv,
+            truck: body.pricing?.truck !== undefined ? Number(body.pricing.truck) : existingService.pricing.truck,
+          },
+          changedBy: session.user.id,
+        });
+      }
+    }
 
     const service = await Service.findByIdAndUpdate(id, update, { new: true }).select("-__v").lean();
     if (!service) {

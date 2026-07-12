@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Booking } from "@/models/Booking";
 import { Customer } from "@/models/Customer";
+import { TimeSlot } from "@/models/TimeSlot";
 import { auth } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
@@ -18,22 +19,36 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status");
     const date = searchParams.get("date");
+    const from = searchParams.get("from");
+    const to = searchParams.get("to");
+    const search = searchParams.get("search");
     const page = Math.max(0, Number(searchParams.get("page") || 0));
     const limit = Math.min(100, Math.max(1, Number(searchParams.get("limit") || 20)));
 
     const filter: Record<string, unknown> = {};
     if (status) filter.status = status;
+
+    // Date filtering: single date or range
     if (date) {
       const start = new Date(date);
       const end = new Date(date);
       end.setDate(end.getDate() + 1);
       filter.date = { $gte: start, $lt: end };
+    } else if (from || to) {
+      const dateFilter: Record<string, Date> = {};
+      if (from) dateFilter.$gte = new Date(from);
+      if (to) {
+        const toDate = new Date(to);
+        toDate.setDate(toDate.getDate() + 1);
+        dateFilter.$lt = toDate;
+      }
+      if (Object.keys(dateFilter).length) filter.date = dateFilter;
     }
 
     const [bookings, total] = await Promise.all([
       Booking.find(filter)
         .populate("customer", "name phone vehicleType")
-        .populate("service", "name category")
+        .populate("service", "name category pricing")
         .select("-__v")
         .sort({ date: -1, timeSlot: 1 })
         .skip(page * limit)
@@ -118,17 +133,45 @@ export async function POST(req: NextRequest) {
       };
     }
 
+    // Check TimeSlot capacity before creating booking
+    const bookingDate = new Date(body.date);
+    bookingDate.setHours(0, 0, 0, 0);
+    const timeSlotStr = String(body.timeSlot).trim().slice(0, 10);
+
+    let timeSlot = await TimeSlot.findOne({ date: bookingDate, time: timeSlotStr });
+    if (!timeSlot) {
+      // Auto-create the time slot with default capacity
+      timeSlot = await TimeSlot.create({
+        date: bookingDate,
+        time: timeSlotStr,
+        capacity: 3,
+        currentBookings: 0,
+      });
+    }
+
+    if (timeSlot.currentBookings >= timeSlot.capacity) {
+      return NextResponse.json(
+        { error: "This time slot is fully booked. Please choose another slot." },
+        { status: 409 }
+      );
+    }
+
     const booking = await Booking.create({
       customer: customer._id,
       service: body.serviceId,
       vehicleType: body.vehicleType,
       date: new Date(body.date),
-      timeSlot: String(body.timeSlot).trim().slice(0, 10),
+      timeSlot: timeSlotStr,
       paymentMethod,
       installmentPlan,
       status: "pending",
       price,
       notes: body.notes ? String(body.notes).trim().slice(0, 1000) : undefined,
+    });
+
+    // Increment the time slot's booking count
+    await TimeSlot.findByIdAndUpdate(timeSlot._id, {
+      $inc: { currentBookings: 1 },
     });
 
     return NextResponse.json({ data: booking }, { status: 201 });
