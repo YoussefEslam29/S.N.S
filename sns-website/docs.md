@@ -87,3 +87,18 @@ Implemented the quality fixes detailed in [fix_claude.md](file:///d:/4%29%20proj
   * Translated main homepage text strings (hero section, services menu titles, review tags, and call-to-actions), gallery page content, and the site footer layout.
 * **Leftover AI Tooling Files**: Deleted the instructions folders (`SKILLS/`), `AGENTS.md`, and `CLAUDE.md` to keep the codebase focused on the website implementation.
 * **License Preservation**: Confirmed and retained the GPLv3 license terms in the repo.
+
+---
+
+## 7. Wire Services & Timeslots Booking Integration (GoLive Plan)
+We wired the booking wizard and service page to the backend MongoDB APIs:
+* **Upgraded NextAuth**: Upgraded `next-auth` to `5.0.0-beta.25` in `package.json` to resolve build compatibility issues with the NextAuth v5 API shape used in the codebase. Installed dependencies with `--legacy-peer-deps`.
+* **Admin Seeder Script**: Created [seed-admin.ts](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/scripts/seed-admin.ts) to connect to MongoDB and insert the initial Administrator account using the `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` from `.env`. Added `"seed:admin"` script to `package.json`.
+* **Booking Wizard Integration**: Updated [page.tsx (Booking)](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/app/booking/page.tsx) to:
+  * Fetch active services dynamically on mount from `/api/services`.
+  * Fetch timeslots and capacity checks dynamically from `/api/timeslots?date=YYYY-MM-DD` when the user selects a date, disabling unavailable/full slots.
+  * Correct the fields in the POST body to match the database schemas (e.g. flat `customerName`, `customerPhone` attributes instead of nested objects).
+  * Enable bilingual support (`locale === "ar" ? service.name.ar : service.name.en`) inside all wizard steps.
+  * Implement loaders, confirmation details, and error banners to handle transaction feedback.
+* **Services Page Internationalization**: Updated [page.tsx (Services)](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/app/services/page.tsx) to load translated name and description strings dynamically, including translated category tab headers and installment details.
+

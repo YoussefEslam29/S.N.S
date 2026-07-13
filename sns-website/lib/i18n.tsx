@@ -118,9 +118,46 @@ const translations: Record<string, Record<Locale, string>> = {
   "footer.viewOnMaps": { en: "View on Google Maps", ar: "عرض على خرائط جوجل" },
   "footer.allRights": { en: "All rights reserved.", ar: "جميع الحقوق محفوظة." },
 
+  // ── Booking Page ──
+  "booking.title": { en: "Book Your Session", ar: "احجز جلستك" },
+  "booking.subtitle": { en: "Choose your service, pick a time, and you're booked.", ar: "اختر خدمتك، حدد موعدك، وتم الحجز." },
+  "booking.step.vehicle": { en: "Vehicle", ar: "المركبة" },
+  "booking.step.service": { en: "Service", ar: "الخدمة" },
+  "booking.step.datetime": { en: "Date & Time", ar: "التاريخ والوقت" },
+  "booking.step.payment": { en: "Payment", ar: "الدفع" },
+  "booking.step.info": { en: "Your Info", ar: "بياناتك" },
+  "booking.step.confirm": { en: "Confirm", ar: "تأكيد" },
+  "booking.vehiclePrompt": { en: "What type of vehicle do you have?", ar: "ما هو نوع سيارتك؟" },
+  "booking.servicePrompt": { en: "Choose your service", ar: "اختر خدمتك" },
+  "booking.datetimePrompt": { en: "Pick a date and time", ar: "اختر التاريخ والوقت" },
+  "booking.availableDates": { en: "Available dates:", ar: "التواريخ المتاحة:" },
+  "booking.availableTimes": { en: "Available times:", ar: "الأوقات المتاحة:" },
+  "booking.selectDateFirst": { en: "Please select a date first to see available times.", ar: "يرجى اختيار التاريخ أولاً لرؤية الأوقات المتاحة." },
+  "booking.paymentPrompt": { en: "How would you like to pay?", ar: "كيف ترغب في الدفع؟" },
+  "booking.infoPrompt": { en: "Your information", ar: "معلوماتك الشخصية" },
+  "booking.confirmPrompt": { en: "Confirm your booking", ar: "تأكيد الحجز" },
+  "booking.successTitle": { en: "Booking Confirmed!", ar: "تم تأكيد الحجز بنجاح!" },
+  "booking.successMsg": { en: "We've received your booking for {service} on {date} at {time}.", ar: "لقد استلمنا حجزك لـ {service} بتاريخ {date} الساعة {time}." },
+  "booking.successNote": { en: "We'll confirm your appointment shortly. If you need to make changes, contact us at", ar: "سنقوم بتأكيد موعدك قريباً. إذا كنت بحاجة لإجراء تغييرات، تواصل معنا على" },
+  "booking.backToHome": { en: "Back to Home", ar: "العودة للرئيسية" },
+  "booking.name": { en: "Full Name", ar: "الاسم بالكامل" },
+  "booking.phone": { en: "Phone Number", ar: "رقم الهاتف" },
+  "booking.email": { en: "Email", ar: "البريد الإلكتروني" },
+  "booking.vehicleMake": { en: "Vehicle Make", ar: "ماركة السيارة" },
+  "booking.vehicleModel": { en: "Vehicle Model", ar: "موديل السيارة" },
+  "booking.optional": { en: "optional", ar: "اختياري" },
+  "booking.notes": { en: "Notes / Special Requests", ar: "ملاحظات / طلبات خاصة" },
+  "booking.back": { en: "Back", ar: "رجوع" },
+  "booking.next": { en: "Next", ar: "التالي" },
+  "booking.confirmBtn": { en: "Confirm Booking", ar: "تأكيد الحجز" },
+  "booking.loadingSlots": { en: "Loading available times...", ar: "جاري تحميل الأوقات المتاحة..." },
+  "booking.noSlots": { en: "No slots available for this date. Please choose another date.", ar: "لا توجد مواعيد متاحة في هذا اليوم. يرجى اختيار تاريخ آخر." },
+  "booking.closedFriday": { en: "Closed on Friday. Please select another day.", ar: "مغلق يوم الجمعة. يرجى اختيار يوم آخر." },
+
   // ── Language Toggle ──
   "lang.switch": { en: "عربي", ar: "English" },
 };
+
 
 /* ─── Context ─── */
 interface LanguageContextType {

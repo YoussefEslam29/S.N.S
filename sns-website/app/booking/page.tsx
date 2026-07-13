@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, Suspense } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -15,45 +15,38 @@ import {
   Phone,
   Mail,
   CheckCircle2,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { VehicleSelector, type VehicleType } from "@/components/services/VehicleSelector";
 import { formatPrice, cn } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n";
 
-/* ─── Steps ─── */
+interface ApiService {
+  _id: string;
+  name: { en: string; ar: string };
+  description: { en: string; ar: string };
+  category: string;
+  pricing: { sedan: number; suv: number; truck: number };
+  duration: number;
+  installmentsAllowed?: boolean;
+  maxInstallments?: number;
+}
+
 const steps = [
-  { id: 1, label: "Vehicle", icon: Car },
-  { id: 2, label: "Service", icon: CheckCircle2 },
-  { id: 3, label: "Date & Time", icon: Calendar },
-  { id: 4, label: "Payment", icon: CreditCard },
-  { id: 5, label: "Your Info", icon: User },
-  { id: 6, label: "Confirm", icon: Check },
-];
-
-/* ─── Time Slots (2 PM – 12 AM, every 1 hour) ─── */
-const timeSlots = [
-  "14:00", "15:00", "16:00", "17:00", "18:00",
-  "19:00", "20:00", "21:00", "22:00", "23:00",
-];
-
-/* ─── Services (same as services page) ─── */
-const allServices = [
-  { id: "wash-basic", name: "Inside & Outside Wash", category: "wash", pricing: { sedan: 300, suv: 400, truck: 500 }, duration: 60 },
-  { id: "wash-detailed", name: "Wash + Chemical Wiping", category: "wash", pricing: { sedan: 400, suv: 550, truck: 700 }, duration: 90 },
-  { id: "wash-premium", name: "Premium Wash + Motor Cleaning", category: "wash", pricing: { sedan: 500, suv: 700, truck: 900 }, duration: 120 },
-  { id: "detail-interior", name: "Full Interior Detailing", category: "detailing", pricing: { sedan: 800, suv: 1100, truck: 1400 }, duration: 180 },
-  { id: "detail-exterior", name: "Exterior Polish & Detail", category: "detailing", pricing: { sedan: 1200, suv: 1600, truck: 2000 }, duration: 240 },
-  { id: "ceramic-standard", name: "Ceramic Coating — Standard", category: "ceramic-coating", pricing: { sedan: 3000, suv: 4000, truck: 5000 }, duration: 480 },
-  { id: "ceramic-premium", name: "Ceramic Coating — Premium", category: "ceramic-coating", pricing: { sedan: 5000, suv: 7000, truck: 9000 }, duration: 720 },
-  { id: "ppf-partial", name: "PPF — Front End Package", category: "ppf", pricing: { sedan: 15000, suv: 20000, truck: 25000 }, duration: 1440, installments: true },
-  { id: "ppf-full", name: "PPF — Full Body Wrap", category: "ppf", pricing: { sedan: 35000, suv: 45000, truck: 55000 }, duration: 2880, installments: true },
-  { id: "tint-standard", name: "Window Tinting — Standard", category: "tinting", pricing: { sedan: 1500, suv: 2000, truck: 2500 }, duration: 120 },
-  { id: "tint-ceramic", name: "Window Tinting — Ceramic", category: "tinting", pricing: { sedan: 3000, suv: 4000, truck: 5000 }, duration: 180 },
+  { id: 1, labelKey: "booking.step.vehicle", icon: Car },
+  { id: 2, labelKey: "booking.step.service", icon: CheckCircle2 },
+  { id: 3, labelKey: "booking.step.datetime", icon: Calendar },
+  { id: 4, labelKey: "booking.step.payment", icon: CreditCard },
+  { id: 5, labelKey: "booking.step.info", icon: User },
+  { id: 6, labelKey: "booking.step.confirm", icon: Check },
 ];
 
 function BookingContent() {
   const searchParams = useSearchParams();
   const preselectedService = searchParams.get("service") || "";
   const preselectedVehicle = (searchParams.get("vehicle") as VehicleType) || "sedan";
+  const { locale, t } = useLanguage();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [vehicleType, setVehicleType] = useState<VehicleType>(preselectedVehicle);
@@ -67,13 +60,72 @@ function BookingContent() {
     email: "",
     vehicleMake: "",
     vehicleModel: "",
+    notes: "",
   });
+
+  // API loading states
+  const [services, setServices] = useState<ApiService[]>([]);
+  const [loadingServices, setLoadingServices] = useState(true);
+  const [servicesError, setServicesError] = useState<string | null>(null);
+
+  const [slots, setSlots] = useState<Array<{ time: string; available: boolean; remaining: number }>>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const selectedService = allServices.find((s) => s.id === selectedServiceId);
+  // Fetch active services on mount
+  useEffect(() => {
+    async function fetchServices() {
+      try {
+        setLoadingServices(true);
+        const res = await fetch("/api/services");
+        if (!res.ok) throw new Error("Failed to fetch services");
+        const data = await res.json();
+        setServices(data.data ?? []);
+      } catch (err) {
+        setServicesError(err instanceof Error ? err.message : "Failed to load services");
+      } finally {
+        setLoadingServices(false);
+      }
+    }
+    fetchServices();
+  }, []);
+
+  // Fetch available timeslots when selectedDate changes
+  useEffect(() => {
+    if (!selectedDate) {
+      setSlots([]);
+      return;
+    }
+    async function fetchSlots() {
+      try {
+        setLoadingSlots(true);
+        const res = await fetch(`/api/timeslots?date=${selectedDate}`);
+        if (!res.ok) throw new Error("Failed to fetch slots");
+        const data = await res.json();
+        setSlots(data.data ?? []);
+      } catch (err) {
+        console.error(err);
+        setSlots([]);
+      } finally {
+        setLoadingSlots(false);
+      }
+    }
+    fetchSlots();
+  }, [selectedDate]);
+
+  const selectedService = services.find((s) => s._id === selectedServiceId);
   const price = selectedService ? selectedService.pricing[vehicleType] : 0;
 
-  // Generate available dates (next 14 days, excluding Fridays)
+  // Reset time slot when date changes
+  const handleDateChange = (date: string) => {
+    setSelectedDate(date);
+    setSelectedTime("");
+  };
+
+  // Generate available dates (next 21 days, excluding Fridays)
   const availableDates = useMemo(() => {
     const dates: string[] = [];
     const today = new Date();
@@ -99,35 +151,135 @@ function BookingContent() {
   };
 
   const handleSubmit = async () => {
-    // TODO: POST to /api/bookings
-    setIsSubmitted(true);
+    try {
+      setSubmitting(true);
+      setSubmitError(null);
+
+      const res = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerName: customerInfo.name,
+          customerPhone: customerInfo.phone,
+          customerEmail: customerInfo.email || undefined,
+          vehicleType,
+          serviceId: selectedServiceId,
+          date: selectedDate,
+          timeSlot: selectedTime,
+          paymentMethod,
+          price,
+          vehicleMake: customerInfo.vehicleMake || undefined,
+          vehicleModel: customerInfo.vehicleModel || undefined,
+          notes: customerInfo.notes || undefined,
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || "Failed to create booking");
+      }
+
+      setIsSubmitted(true);
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
+  if (loadingServices) {
+    return (
+      <div className="py-20 text-center">
+        <Loader2 className="w-8 h-8 mx-auto text-primary animate-spin" />
+        <p className="text-text-secondary mt-4 text-sm">
+          {locale === "ar" ? "جاري تحميل الخدمات المتاحة..." : "Loading available services..."}
+        </p>
+      </div>
+    );
+  }
+
+  if (servicesError) {
+    return (
+      <div className="py-20 max-w-md mx-auto text-center space-y-4">
+        <div className="w-12 h-12 mx-auto flex items-center justify-center rounded-full bg-error/10 text-error">
+          <AlertCircle className="w-6 h-6" />
+        </div>
+        <h2 className="text-lg font-heading font-semibold text-text-primary">
+          {locale === "ar" ? "فشل تحميل البيانات" : "Failed to Load Services"}
+        </h2>
+        <p className="text-text-secondary text-sm">{servicesError}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-[4px] text-sm font-medium transition-colors"
+        >
+          {locale === "ar" ? "إعادة المحاولة" : "Try Again"}
+        </button>
+      </div>
+    );
+  }
+
   if (isSubmitted) {
+    const formattedDate = selectedDate
+      ? new Date(selectedDate + "T00:00:00").toLocaleDateString(locale, {
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+        })
+      : "";
+    const hour = parseInt(selectedTime);
+    const formattedTime = !isNaN(hour)
+      ? hour >= 12
+        ? `${hour === 12 ? 12 : hour - 12}:00 PM`
+        : `${hour}:00 AM`
+      : selectedTime;
+
     return (
       <div className="py-20 md:py-32">
         <div className="container-sns max-w-lg text-center space-y-6">
-          <div className="w-20 h-20 mx-auto flex items-center justify-center rounded-full bg-success/10">
+          <div className="w-20 h-20 mx-auto flex items-center justify-center rounded-full bg-success/10 animate-scale-in">
             <CheckCircle2 className="w-10 h-10 text-success" />
           </div>
           <h1 className="text-3xl font-heading font-bold text-text-primary">
-            Booking Confirmed!
+            {t("booking.successTitle")}
           </h1>
-          <p className="text-text-secondary">
-            We&apos;ve received your booking for{" "}
-            <span className="text-text-primary font-medium">
-              {selectedService?.name}
-            </span>{" "}
-            on{" "}
-            <span className="text-text-primary font-medium">
-              {selectedDate} at {selectedTime}
-            </span>
-            .
+          <p className="text-text-secondary text-sm leading-relaxed">
+            {locale === "ar" ? (
+              <>
+                لقد تلقينا حجزك بنجاح لخدمة{" "}
+                <span className="text-text-primary font-semibold">
+                  {selectedService?.name.ar}
+                </span>{" "}
+                بتاريخ{" "}
+                <span className="text-text-primary font-semibold">
+                  {formattedDate}
+                </span>{" "}
+                في تمام الساعة{" "}
+                <span className="text-text-primary font-semibold">
+                  {formattedTime}
+                </span>
+                .
+              </>
+            ) : (
+              <>
+                We&apos;ve received your booking for{" "}
+                <span className="text-text-primary font-semibold font-heading">
+                  {selectedService?.name.en}
+                </span>{" "}
+                on{" "}
+                <span className="text-text-primary font-semibold">
+                  {formattedDate}
+                </span>{" "}
+                at{" "}
+                <span className="text-text-primary font-semibold">
+                  {formattedTime}
+                </span>
+                .
+              </>
+            )}
           </p>
-          <p className="text-sm text-text-muted">
-            We&apos;ll confirm your appointment shortly. If you need to make changes,
-            contact us at{" "}
-            <a href="tel:+201153353362" className="text-primary">
+          <p className="text-xs text-text-muted">
+            {t("booking.successNote")}{" "}
+            <a href="tel:+201153353362" className="text-primary font-semibold">
               0115 335 3362
             </a>
             .
@@ -136,7 +288,7 @@ function BookingContent() {
             href="/"
             className="inline-flex items-center justify-center h-10 px-6 bg-primary hover:bg-primary-hover text-white font-semibold rounded-[4px] text-sm transition-colors"
           >
-            Back to Home
+            {t("booking.backToHome")}
           </Link>
         </div>
       </div>
@@ -149,10 +301,10 @@ function BookingContent() {
         {/* Header */}
         <div className="text-center mb-10">
           <h1 className="text-3xl md:text-4xl font-heading font-bold text-text-primary mb-2">
-            Book Your Session
+            {t("booking.title")}
           </h1>
-          <p className="text-text-secondary">
-            Choose your service, pick a time, and you&apos;re booked.
+          <p className="text-text-secondary text-sm">
+            {t("booking.subtitle")}
           </p>
         </div>
 
@@ -166,14 +318,14 @@ function BookingContent() {
               <div key={step.id} className="flex items-center">
                 <div
                   className={cn(
-                    "flex items-center gap-1.5 px-3 py-2 rounded-[4px] text-xs font-medium transition-colors",
+                    "flex items-center gap-1.5 px-3 py-2 rounded-[4px] text-xs font-medium transition-colors whitespace-nowrap",
                     isActive && "bg-primary text-white",
                     isCompleted && "bg-success/10 text-success",
                     !isActive && !isCompleted && "bg-surface text-text-muted"
                   )}
                 >
                   <Icon className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">{step.label}</span>
+                  <span className="hidden sm:inline">{t(step.labelKey)}</span>
                 </div>
                 {i < steps.length - 1 && (
                   <div className={cn(
@@ -192,7 +344,7 @@ function BookingContent() {
           {currentStep === 1 && (
             <div className="space-y-6">
               <h2 className="text-xl font-heading font-semibold text-text-primary">
-                What type of vehicle do you have?
+                {t("booking.vehiclePrompt")}
               </h2>
               <VehicleSelector selected={vehicleType} onChange={setVehicleType} size="lg" />
             </div>
@@ -202,40 +354,41 @@ function BookingContent() {
           {currentStep === 2 && (
             <div className="space-y-4">
               <h2 className="text-xl font-heading font-semibold text-text-primary">
-                Choose your service
+                {t("booking.servicePrompt")}
               </h2>
               <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-                {allServices.map((service) => (
+                {services.map((service) => (
                   <button
-                    key={service.id}
-                    onClick={() => setSelectedServiceId(service.id)}
+                    key={service._id}
+                    onClick={() => setSelectedServiceId(service._id)}
                     className={cn(
                       "w-full flex items-center justify-between p-4 rounded-[4px] border transition-all duration-200 text-left",
-                      selectedServiceId === service.id
+                      selectedServiceId === service._id
                         ? "border-primary bg-primary/5"
                         : "border-border hover:border-border-light bg-surface-elevated"
                     )}
+                    dir={locale === "ar" ? "rtl" : "ltr"}
                   >
                     <div>
                       <p className="font-medium text-text-primary text-sm">
-                        {service.name}
+                        {locale === "ar" ? service.name.ar : service.name.en}
                       </p>
                       <div className="flex items-center gap-3 mt-1">
                         <span className="text-xs text-text-muted capitalize">
                           {service.category.replace("-", " ")}
                         </span>
                         <span className="text-xs text-text-muted flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
+                          <Clock className="w-3.5 h-3.5" />
                           {Math.floor(service.duration / 60)}h{service.duration % 60 > 0 ? ` ${service.duration % 60}m` : ""}
                         </span>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className={locale === "ar" ? "text-left" : "text-right"}>
                       <p className="font-heading font-bold text-primary text-sm">
                         {formatPrice(service.pricing[vehicleType])}
                       </p>
-                      {selectedServiceId === service.id && (
-                        <Check className="w-4 h-4 text-primary ml-auto mt-1" />
+                      {selectedServiceId === service._id && (
+                        <Check className={cn("w-4 h-4 text-primary mt-1", locale === "ar" ? "mr-auto" : "ml-auto")} />
                       )}
                     </div>
                   </button>
@@ -248,22 +401,22 @@ function BookingContent() {
           {currentStep === 3 && (
             <div className="space-y-6">
               <h2 className="text-xl font-heading font-semibold text-text-primary">
-                Pick a date and time
+                {t("booking.datetimePrompt")}
               </h2>
 
               {/* Date Grid */}
               <div>
-                <p className="text-sm text-text-secondary mb-3">Available dates:</p>
+                <p className="text-sm text-text-secondary mb-3">{t("booking.availableDates")}</p>
                 <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
                   {availableDates.map((date) => {
                     const d = new Date(date + "T00:00:00");
-                    const dayName = d.toLocaleDateString("en", { weekday: "short" });
+                    const dayName = d.toLocaleDateString(locale, { weekday: "short" });
                     const dayNum = d.getDate();
-                    const month = d.toLocaleDateString("en", { month: "short" });
+                    const month = d.toLocaleDateString(locale, { month: "short" });
                     return (
                       <button
                         key={date}
-                        onClick={() => setSelectedDate(date)}
+                        onClick={() => handleDateChange(date)}
                         className={cn(
                           "flex flex-col items-center py-3 px-2 rounded-[4px] border text-xs transition-all",
                           selectedDate === date
@@ -283,29 +436,49 @@ function BookingContent() {
               {/* Time Slots */}
               {selectedDate && (
                 <div>
-                  <p className="text-sm text-text-secondary mb-3">Available times:</p>
-                  <div className="grid grid-cols-5 gap-2">
-                    {timeSlots.map((time) => {
-                      const hour = parseInt(time.split(":")[0]);
-                      const label = hour >= 12
-                        ? `${hour === 12 ? 12 : hour - 12}:00 PM`
-                        : `${hour}:00 AM`;
-                      return (
-                        <button
-                          key={time}
-                          onClick={() => setSelectedTime(time)}
-                          className={cn(
-                            "py-2.5 rounded-[4px] border text-sm font-medium transition-all",
-                            selectedTime === time
-                              ? "border-primary bg-primary text-white"
-                              : "border-border hover:border-border-light text-text-secondary"
-                          )}
-                        >
-                          {label}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <p className="text-sm text-text-secondary mb-3">{t("booking.availableTimes")}</p>
+                  {loadingSlots ? (
+                    <div className="flex items-center gap-2 text-text-muted text-sm py-4">
+                      <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                      <span>{t("booking.loadingSlots")}</span>
+                    </div>
+                  ) : slots.length === 0 ? (
+                    <p className="text-sm text-text-muted py-4">
+                      {t("booking.closedFriday")}
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                      {slots.map((slot) => {
+                        const hour = parseInt(slot.time.split(":")[0]);
+                        const label = hour >= 12
+                          ? `${hour === 12 ? 12 : hour - 12}:00 PM`
+                          : `${hour}:00 AM`;
+                        const isSelected = selectedTime === slot.time;
+                        return (
+                          <button
+                            key={slot.time}
+                            onClick={() => slot.available && setSelectedTime(slot.time)}
+                            disabled={!slot.available}
+                            className={cn(
+                              "py-2.5 rounded-[4px] border text-sm font-medium transition-all flex flex-col items-center justify-center",
+                              isSelected
+                                ? "border-primary bg-primary text-white"
+                                : slot.available
+                                  ? "border-border hover:border-border-light text-text-secondary bg-surface-elevated"
+                                  : "border-border/30 text-text-muted bg-surface-elevated/50 cursor-not-allowed opacity-50"
+                            )}
+                          >
+                            <span>{label}</span>
+                            <span className="text-[9px] mt-0.5 opacity-85">
+                              {slot.available 
+                                ? (locale === "ar" ? `متاح (${slot.remaining})` : `${slot.remaining} free`) 
+                                : (locale === "ar" ? "ممتلئ" : "full")}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -315,13 +488,13 @@ function BookingContent() {
           {currentStep === 4 && (
             <div className="space-y-4">
               <h2 className="text-xl font-heading font-semibold text-text-primary">
-                How would you like to pay?
+                {t("booking.paymentPrompt")}
               </h2>
               {[
-                { id: "cash" as const, label: "Cash at the Shop", desc: "Pay when you visit" },
-                { id: "digital" as const, label: "Digital Payment", desc: "Pay with Vodafone Cash, InstaPay, or card" },
-                ...(selectedService && "installments" in selectedService && selectedService.installments
-                  ? [{ id: "installments" as const, label: "Installments (3 Payments)", desc: `3 × ${formatPrice(Math.ceil(price / 3))}` }]
+                { id: "cash" as const, label: locale === "ar" ? "نقداً في المركز" : "Cash at the Shop", desc: locale === "ar" ? "ادفع عند زيارتك للمركز" : "Pay when you visit" },
+                { id: "digital" as const, label: locale === "ar" ? "دفع إلكتروني" : "Digital Payment", desc: locale === "ar" ? "ادفع عبر فودافون كاش، إنستا باي، أو بطاقة الائتمان" : "Pay with Vodafone Cash, InstaPay, or card" },
+                ...(selectedService?.installmentsAllowed
+                  ? [{ id: "installments" as const, label: locale === "ar" ? `تقسيط (3 دفعات)` : `Installments (3 Payments)`, desc: locale === "ar" ? `3 × ${formatPrice(Math.ceil(price / 3))} شهرياً` : `3 × ${formatPrice(Math.ceil(price / 3))} monthly` }]
                   : []),
               ].map((method) => (
                 <button
@@ -333,6 +506,7 @@ function BookingContent() {
                       ? "border-primary bg-primary/5"
                       : "border-border hover:border-border-light bg-surface-elevated"
                   )}
+                  dir={locale === "ar" ? "rtl" : "ltr"}
                 >
                   <div>
                     <p className="font-medium text-text-primary text-sm">{method.label}</p>
@@ -346,80 +520,92 @@ function BookingContent() {
 
           {/* Step 5: Customer Info */}
           {currentStep === 5 && (
-            <div className="space-y-4">
+            <div className="space-y-4" dir={locale === "ar" ? "rtl" : "ltr"}>
               <h2 className="text-xl font-heading font-semibold text-text-primary">
-                Your information
+                {t("booking.infoPrompt")}
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-text-secondary mb-1.5">
-                    Full Name <span className="text-error">*</span>
+                    {t("booking.name")} <span className="text-error">*</span>
                   </label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                    <User className={cn("absolute top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted", locale === "ar" ? "right-3" : "left-3")} />
                     <input
                       type="text"
                       value={customerInfo.name}
                       onChange={(e) => setCustomerInfo({ ...customerInfo, name: e.target.value })}
-                      placeholder="Enter your name"
-                      className="w-full h-10 pl-10 pr-4 rounded-[4px] border border-border bg-surface-elevated text-text-primary text-sm placeholder:text-text-muted focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none transition-colors"
+                      placeholder={locale === "ar" ? "أدخل اسمك بالكامل" : "Enter your full name"}
+                      className={cn("w-full h-10 pr-4 rounded-[4px] border border-border bg-surface-elevated text-text-primary text-sm placeholder:text-text-muted focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none transition-colors", locale === "ar" ? "pr-10 pl-4" : "pl-10 pr-4")}
                       required
                     />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-text-secondary mb-1.5">
-                    Phone Number <span className="text-error">*</span>
+                    {t("booking.phone")} <span className="text-error">*</span>
                   </label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                    <Phone className={cn("absolute top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted", locale === "ar" ? "right-3" : "left-3")} />
                     <input
                       type="tel"
                       value={customerInfo.phone}
                       onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
                       placeholder="01X XXXX XXXX"
-                      className="w-full h-10 pl-10 pr-4 rounded-[4px] border border-border bg-surface-elevated text-text-primary text-sm placeholder:text-text-muted focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none transition-colors"
+                      className={cn("w-full h-10 pr-4 rounded-[4px] border border-border bg-surface-elevated text-text-primary text-sm placeholder:text-text-muted focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none transition-colors", locale === "ar" ? "pr-10 pl-4" : "pl-10 pr-4")}
                       required
                     />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-text-secondary mb-1.5">
-                    Email <span className="text-text-muted">(optional)</span>
+                    {t("booking.email")} <span className="text-text-muted">({t("booking.optional")})</span>
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                    <Mail className={cn("absolute top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted", locale === "ar" ? "right-3" : "left-3")} />
                     <input
                       type="email"
                       value={customerInfo.email}
                       onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
                       placeholder="you@example.com"
-                      className="w-full h-10 pl-10 pr-4 rounded-[4px] border border-border bg-surface-elevated text-text-primary text-sm placeholder:text-text-muted focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none transition-colors"
+                      className={cn("w-full h-10 pr-4 rounded-[4px] border border-border bg-surface-elevated text-text-primary text-sm placeholder:text-text-muted focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none transition-colors", locale === "ar" ? "pr-10 pl-4" : "pl-10 pr-4")}
                     />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-text-secondary mb-1.5">
-                    Vehicle Make
+                    {t("booking.vehicleMake")}
                   </label>
                   <input
                     type="text"
                     value={customerInfo.vehicleMake}
                     onChange={(e) => setCustomerInfo({ ...customerInfo, vehicleMake: e.target.value })}
-                    placeholder="e.g. BMW, Toyota"
+                    placeholder="e.g. BMW, Mercedes, Toyota"
                     className="w-full h-10 px-4 rounded-[4px] border border-border bg-surface-elevated text-text-primary text-sm placeholder:text-text-muted focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none transition-colors"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-text-secondary mb-1.5">
-                    Vehicle Model
+                    {t("booking.vehicleModel")}
                   </label>
                   <input
                     type="text"
                     value={customerInfo.vehicleModel}
                     onChange={(e) => setCustomerInfo({ ...customerInfo, vehicleModel: e.target.value })}
-                    placeholder="e.g. X5, Camry"
+                    placeholder="e.g. C200, Camry"
                     className="w-full h-10 px-4 rounded-[4px] border border-border bg-surface-elevated text-text-primary text-sm placeholder:text-text-muted focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none transition-colors"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                    {t("booking.notes")}
+                  </label>
+                  <textarea
+                    value={customerInfo.notes}
+                    onChange={(e) => setCustomerInfo({ ...customerInfo, notes: e.target.value })}
+                    placeholder={locale === "ar" ? "أي تفاصيل إضافية أو طلبات خاصة" : "Any special requests or details to share"}
+                    rows={3}
+                    className="w-full p-4 rounded-[4px] border border-border bg-surface-elevated text-text-primary text-sm placeholder:text-text-muted focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none transition-colors resize-none"
                   />
                 </div>
               </div>
@@ -428,20 +614,20 @@ function BookingContent() {
 
           {/* Step 6: Confirmation */}
           {currentStep === 6 && (
-            <div className="space-y-6">
+            <div className="space-y-6" dir={locale === "ar" ? "rtl" : "ltr"}>
               <h2 className="text-xl font-heading font-semibold text-text-primary">
-                Confirm your booking
+                {t("booking.confirmPrompt")}
               </h2>
               <div className="space-y-3">
                 {[
-                  { label: "Service", value: selectedService?.name || "" },
-                  { label: "Vehicle", value: `${vehicleType.charAt(0).toUpperCase() + vehicleType.slice(1)} — ${customerInfo.vehicleMake} ${customerInfo.vehicleModel}`.trim() },
-                  { label: "Date", value: selectedDate ? new Date(selectedDate + "T00:00:00").toLocaleDateString("en", { weekday: "long", month: "long", day: "numeric" }) : "" },
-                  { label: "Time", value: selectedTime ? `${parseInt(selectedTime) >= 12 ? `${parseInt(selectedTime) === 12 ? 12 : parseInt(selectedTime) - 12}:00 PM` : `${parseInt(selectedTime)}:00 AM`}` : "" },
-                  { label: "Payment", value: paymentMethod === "installments" ? `Installments (3 × ${formatPrice(Math.ceil(price / 3))})` : paymentMethod.charAt(0).toUpperCase() + paymentMethod.slice(1) },
-                  { label: "Name", value: customerInfo.name },
-                  { label: "Phone", value: customerInfo.phone },
-                  { label: "Total Price", value: formatPrice(price), highlight: true },
+                  { label: locale === "ar" ? "الخدمة" : "Service", value: selectedService ? (locale === "ar" ? selectedService.name.ar : selectedService.name.en) : "" },
+                  { label: locale === "ar" ? "نوع السيارة" : "Vehicle", value: `${vehicleType.charAt(0).toUpperCase() + vehicleType.slice(1)} — ${customerInfo.vehicleMake} ${customerInfo.vehicleModel}`.trim() },
+                  { label: locale === "ar" ? "التاريخ" : "Date", value: selectedDate ? new Date(selectedDate + "T00:00:00").toLocaleDateString(locale, { weekday: "long", month: "long", day: "numeric" }) : "" },
+                  { label: locale === "ar" ? "الوقت" : "Time", value: selectedTime ? (parseInt(selectedTime) >= 12 ? `${parseInt(selectedTime) === 12 ? 12 : parseInt(selectedTime) - 12}:00 PM` : `${parseInt(selectedTime)}:00 AM`) : "" },
+                  { label: locale === "ar" ? "الدفع" : "Payment", value: paymentMethod === "installments" ? (locale === "ar" ? `تقسيط (3 دفعات)` : `Installments (3 Payments)`) : (locale === "ar" ? (paymentMethod === "cash" ? "نقداً" : "إلكتروني") : paymentMethod.charAt(0).toUpperCase() + paymentMethod.slice(1)) },
+                  { label: locale === "ar" ? "الاسم" : "Name", value: customerInfo.name },
+                  { label: locale === "ar" ? "الهاتف" : "Phone", value: customerInfo.phone },
+                  { label: locale === "ar" ? "السعر الإجمالي" : "Total Price", value: formatPrice(price), highlight: true },
                 ].map((row) => (
                   <div key={row.label} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                     <span className="text-sm text-text-secondary">{row.label}</span>
@@ -454,24 +640,31 @@ function BookingContent() {
                   </div>
                 ))}
               </div>
+
+              {submitError && (
+                <div className="p-3 rounded-[4px] bg-error/10 text-error text-xs font-semibold flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{submitError}</span>
+                </div>
+              )}
             </div>
           )}
         </div>
 
         {/* Navigation Buttons */}
-        <div className="flex items-center justify-between mt-6">
+        <div className="flex items-center justify-between mt-6" dir={locale === "ar" ? "rtl" : "ltr"}>
           <button
             onClick={() => setCurrentStep((s) => Math.max(1, s - 1))}
-            disabled={currentStep === 1}
+            disabled={currentStep === 1 || submitting}
             className={cn(
               "flex items-center gap-2 h-10 px-4 rounded-[4px] text-sm font-medium transition-colors",
               currentStep === 1
-                ? "text-text-muted cursor-not-allowed"
+                ? "text-text-muted cursor-not-allowed opacity-50"
                 : "text-text-secondary hover:text-text-primary hover:bg-surface-elevated border border-border"
             )}
           >
-            <ArrowLeft className="w-4 h-4" />
-            Back
+            {locale === "ar" ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
+            {t("booking.back")}
           </button>
 
           {currentStep < 6 ? (
@@ -485,16 +678,26 @@ function BookingContent() {
                   : "bg-surface-elevated text-text-muted cursor-not-allowed"
               )}
             >
-              Next
-              <ArrowRight className="w-4 h-4" />
+              {t("booking.next")}
+              {locale === "ar" ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
             </button>
           ) : (
             <button
               onClick={handleSubmit}
-              className="flex items-center gap-2 h-10 px-6 rounded-[4px] bg-success hover:bg-success/90 text-white text-sm font-semibold transition-colors"
+              disabled={submitting}
+              className="flex items-center gap-2 h-10 px-6 rounded-[4px] bg-success hover:bg-success/90 text-white text-sm font-semibold transition-colors disabled:opacity-50"
             >
-              <Check className="w-4 h-4" />
-              Confirm Booking
+              {submitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>{locale === "ar" ? "جاري الإرسال..." : "Processing..."}</span>
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4" />
+                  <span>{t("booking.confirmBtn")}</span>
+                </>
+              )}
             </button>
           )}
         </div>
@@ -507,7 +710,7 @@ export default function BookingPage() {
   return (
     <Suspense fallback={
       <div className="py-20 text-center">
-        <div className="w-8 h-8 mx-auto border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+        <Loader2 className="w-8 h-8 mx-auto text-primary animate-spin" />
       </div>
     }>
       <BookingContent />

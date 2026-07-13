@@ -15,6 +15,7 @@ import {
 import { VehicleSelector, type VehicleType } from "@/components/services/VehicleSelector";
 import { formatPrice } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n";
 
 type ServiceCategory = "all" | "wash" | "detailing" | "ceramic-coating" | "ppf" | "tinting";
 
@@ -47,6 +48,7 @@ interface ApiService {
 }
 
 export default function ServicesPage() {
+  const { locale, t } = useLanguage();
   const [vehicleType, setVehicleType] = useState<VehicleType>("sedan");
   const [activeCategory, setActiveCategory] = useState<ServiceCategory>("all");
   const [services, setServices] = useState<ApiService[]>([]);
@@ -112,7 +114,12 @@ export default function ServicesPage() {
                 )}
               >
                 <Icon className="w-4 h-4" />
-                {tab.label}
+                {tab.id === "all" ? t("gallery.allWork") : 
+                 tab.id === "wash" ? t("gallery.carWash") : 
+                 tab.id === "detailing" ? t("gallery.detailing") : 
+                 tab.id === "ceramic-coating" ? t("gallery.ceramicCoating") : 
+                 tab.id === "ppf" ? t("gallery.ppf") : 
+                 tab.id === "tinting" ? t("gallery.tinting") : tab.label}
               </button>
             );
           })}
@@ -158,17 +165,19 @@ export default function ServicesPage() {
                     {/* Content */}
                     <div>
                       <h3 className="text-lg font-semibold text-text-primary mb-2">
-                        {service.name.en}
+                        {locale === "ar" ? service.name.ar : service.name.en}
                       </h3>
                       <p className="text-sm text-text-secondary leading-relaxed">
-                        {service.description.en}
+                        {locale === "ar" ? service.description.ar : service.description.en}
                       </p>
                     </div>
 
                     {/* Badges */}
                     {service.installmentsAllowed && (
                       <span className="inline-flex items-center px-2 py-1 text-xs bg-amber-500/10 text-amber-400 rounded-[4px] border border-amber-500/20">
-                        Installments Available ({service.maxInstallments} payments)
+                        {locale === "ar" 
+                          ? `تقسيط متاح (${service.maxInstallments} دفعات)` 
+                          : `Installments Available (${service.maxInstallments} payments)`}
                       </span>
                     )}
                   </div>
@@ -188,8 +197,8 @@ export default function ServicesPage() {
                         href={`/booking?service=${service._id}&vehicle=${vehicleType}`}
                         className="inline-flex items-center gap-1 h-9 px-4 bg-primary hover:bg-primary-hover text-white text-sm font-medium rounded-[4px] transition-colors"
                       >
-                        Book
-                        <ArrowRight className="w-4 h-4" />
+                        {locale === "ar" ? "احجز" : "Book"}
+                        <ArrowRight className={cn("w-4 h-4", locale === "ar" && "rotate-180")} />
                       </Link>
                     </div>
                   </div>
