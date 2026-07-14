@@ -1,9 +1,14 @@
 // scripts/seed-admin.ts — creates the first root administrator account.
 // Run once against a fresh database: npm run seed:admin
+import dns from "node:dns";
+// Force Google DNS — local ISP DNS often fails MongoDB Atlas SRV lookups
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
+
 import "dotenv/config";
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import { User } from "../models/User";
+
 
 async function main() {
   const uri = process.env.MONGODB_URI;

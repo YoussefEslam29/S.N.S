@@ -1,10 +1,13 @@
-// lib/auth.ts — NextAuth.js configuration with credentials provider
+// lib/auth.ts — Full NextAuth configuration (Node.js only, NOT safe for Edge)
+// Middleware uses lib/auth.config.ts (the Edge-safe subset).
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { connectDB } from "./db";
 import { User } from "@/models/User";
 import type { UserRole } from "@/models/User";
+import { authConfig } from "./auth.config";
+
 
 // Extend NextAuth types to include role
 declare module "next-auth" {
@@ -29,6 +32,7 @@ declare module "@auth/core/jwt" {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  ...authConfig,
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -85,8 +89,5 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       return session;
     },
-  },
-  pages: {
-    signIn: "/admin/login",
   },
 });

@@ -1,5 +1,10 @@
 /** MongoDB connection singleton — caches connection across hot reloads in development. */
+import dns from "node:dns";
+// Force Google DNS — local ISP DNS often can't resolve MongoDB Atlas SRV records
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
+
 import mongoose from "mongoose";
+
 
 // Prevent "Cannot overwrite model" error during Next.js hot reload
 let cached = (global as typeof globalThis & { mongoose?: { conn: typeof mongoose | null; promise: Promise<typeof mongoose> | null } }).mongoose;
