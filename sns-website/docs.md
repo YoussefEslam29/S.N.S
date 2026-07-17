@@ -102,3 +102,20 @@ We wired the booking wizard and service page to the backend MongoDB APIs:
   * Implement loaders, confirmation details, and error banners to handle transaction feedback.
 * **Services Page Internationalization**: Updated [page.tsx (Services)](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/app/services/page.tsx) to load translated name and description strings dynamically, including translated category tab headers and installment details.
 
+---
+
+## 8. Self-Healing DNS Resolution, Seeder Script & Waiting Overlays
+We added system fixes to guarantee database connection success across any ISP and implemented waiting overlays:
+* **Self-Healing DNS Converter**: Created a dynamic query converter inside [db.ts](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/lib/db.ts) that uses a custom `node:dns` `Resolver` pointed to Google DNS (`8.8.8.8`, `8.8.4.4`). It resolves the MongoDB SRV/TXT records at runtime and outputs a standard `mongodb://` string, bypassing local ISP DNS limitations without process-level preloading hacks.
+* **Self-Healing Connection Caching**: Enhanced `connectDB` to catch database connection errors and purge them from the Next.js global cache (`global.mongoose`) so that the application can self-recover and reconnect on subsequent requests.
+* **Default Services Seeder**: Created [seed-services.ts](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/scripts/seed-services.ts) to populate the MongoDB catalog with default S.N.S services (Premium Wash, Interior Detailing, 3-Year Ceramic Coating, Full PPF Wrap, Premium Window Tinting) in English and Arabic. Added the `"seed:services"` command to `package.json`.
+* **Action Waiting Overlay Screen**: Built a reusable glassmorphic [LoadingOverlay](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/components/LoadingOverlay.tsx) component and wired it into all client wait states:
+  * Public Booking submission
+  * Admin dashboard login
+  * Admin Bookings moderation & marking installments paid
+  * Admin Services CRUD & bulk price updates
+  * Admin Gallery uploads & deletions
+  * Admin Staff creation & toggle active status
+  * Admin Reviews approval & featured actions
+
+
