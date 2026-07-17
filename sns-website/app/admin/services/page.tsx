@@ -19,6 +19,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { cn, formatPrice } from "@/lib/utils";
+import { LoadingOverlay } from "@/components/LoadingOverlay";
 
 type ServiceCategory = "wash" | "detailing" | "ceramic-coating" | "ppf" | "tinting";
 
@@ -314,6 +315,7 @@ export default function AdminServicesPage() {
 
   return (
     <div className="space-y-6">
+      <LoadingOverlay show={saving || bulkSaving} message="Saving service details..." />
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>

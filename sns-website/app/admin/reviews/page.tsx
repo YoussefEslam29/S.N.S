@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   CheckCircle2,
   XCircle,
@@ -9,12 +9,14 @@ import {
   Trash2,
   Clock,
   Search,
-  Filter,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LoadingOverlay } from "@/components/LoadingOverlay";
 
 interface ReviewAdminItem {
-  id: string;
+  _id: string;
   customerName: string;
   rating: number;
   text: string;
@@ -23,20 +25,31 @@ interface ReviewAdminItem {
   createdAt: string;
 }
 
-/* ─── Placeholder data ─── */
-const initialReviews: ReviewAdminItem[] = [
-  { id: "1", customerName: "Ahmed M.", rating: 5, text: "Best car wash in Alexandria! The ceramic coating made my car look brand new. Professional service and fair pricing.", isApproved: true, isFeatured: true, createdAt: "2025-06-15" },
-  { id: "2", customerName: "Mohamed K.", rating: 5, text: "Got PPF installed on my BMW. Incredible quality work.", isApproved: true, isFeatured: true, createdAt: "2025-05-28" },
-  { id: "3", customerName: "Sara A.", rating: 5, text: "Finally a car care shop that shows prices upfront. The full wash package at 300 EGP is excellent value.", isApproved: true, isFeatured: false, createdAt: "2025-06-01" },
-  { id: "4", customerName: "Omar H.", rating: 4, text: "Great interior detailing service. They took their time with my Land Cruiser.", isApproved: true, isFeatured: false, createdAt: "2025-05-10" },
-  { id: "5", customerName: "New Customer 1", rating: 5, text: "Amazing service, very professional team. Will come back for ceramic coating next month.", isApproved: false, isFeatured: false, createdAt: "2025-07-04" },
-  { id: "6", customerName: "New Customer 2", rating: 3, text: "Good wash but the wait was a bit long. Otherwise satisfied with the quality.", isApproved: false, isFeatured: false, createdAt: "2025-07-05" },
-];
-
 export default function AdminReviewsPage() {
-  const [reviews, setReviews] = useState(initialReviews);
+  const [reviews, setReviews] = useState<ReviewAdminItem[]>([]);
   const [filterTab, setFilterTab] = useState<"pending" | "approved" | "all">("pending");
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const fetchReviews = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/reviews?all=true");
+      if (!res.ok) throw new Error("Failed to fetch reviews");
+      const data = await res.json();
+      setReviews(data.data ?? []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchReviews();
+  }, [fetchReviews]);
 
   const filtered = reviews.filter((r) => {
     const matchSearch = r.customerName.toLowerCase().includes(search.toLowerCase()) || r.text.toLowerCase().includes(search.toLowerCase());
@@ -49,28 +62,106 @@ export default function AdminReviewsPage() {
 
   const pendingCount = reviews.filter((r) => !r.isApproved).length;
 
-  const approveReview = (id: string) => {
-    setReviews((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, isApproved: true } : r))
+  const approveReview = async (id: string) => {
+    try {
+      setActionLoading(true);
+      const res = await fetch(`/api/reviews/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isApproved: true }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to approve review");
+      }
+      setReviews((prev) =>
+        prev.map((r) => (r._id === id ? { ...r, isApproved: true } : r))
+      );
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Approve failed");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const rejectReview = async (id: string) => {
+    if (!confirm("Are you sure you want to reject and delete this review?")) return;
+    try {
+      setActionLoading(true);
+      const res = await fetch(`/api/reviews/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to delete review");
+      }
+      setReviews((prev) => prev.filter((r) => r._id !== id));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Reject failed");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const toggleFeatured = async (id: string) => {
+    const review = reviews.find((r) => r._id === id);
+    if (!review) return;
+    try {
+      setActionLoading(true);
+      const res = await fetch(`/api/reviews/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isFeatured: !review.isFeatured }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to toggle featured");
+      }
+      setReviews((prev) =>
+        prev.map((r) => (r._id === id ? { ...r, isFeatured: !r.isFeatured } : r))
+      );
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Toggle failed");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const deleteReview = async (id: string) => {
+    if (!confirm("Are you sure you want to permanently delete this review?")) return;
+    try {
+      setActionLoading(true);
+      const res = await fetch(`/api/reviews/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to delete review");
+      }
+      setReviews((prev) => prev.filter((r) => r._id !== id));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Delete failed");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-6 h-6 text-primary animate-spin" />
+      </div>
     );
-  };
+  }
 
-  const rejectReview = (id: string) => {
-    setReviews((prev) => prev.filter((r) => r.id !== id));
-  };
-
-  const toggleFeatured = (id: string) => {
-    setReviews((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, isFeatured: !r.isFeatured } : r))
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64 text-error">
+        <AlertCircle className="w-5 h-5 mr-2" />
+        <span className="text-sm">{error}</span>
+      </div>
     );
-  };
-
-  const deleteReview = (id: string) => {
-    setReviews((prev) => prev.filter((r) => r.id !== id));
-  };
+  }
 
   return (
     <div className="space-y-6">
+      <LoadingOverlay show={actionLoading} message="Processing review..." />
       {/* Header */}
       <div>
         <h1 className="text-2xl font-heading font-bold text-text-primary">
@@ -126,7 +217,7 @@ export default function AdminReviewsPage() {
       <div className="space-y-3">
         {filtered.map((review) => (
           <div
-            key={review.id}
+            key={review._id}
             className={cn(
               "p-5 rounded-[4px] border bg-surface transition-colors",
               review.isApproved ? "border-border" : "border-warning/30 bg-warning/[0.02]"
@@ -182,7 +273,7 @@ export default function AdminReviewsPage() {
                 {!review.isApproved ? (
                   <>
                     <button
-                      onClick={() => approveReview(review.id)}
+                      onClick={() => approveReview(review._id)}
                       className="p-2 rounded-[4px] text-success hover:bg-success/10 transition-colors"
                       title="Approve"
                       aria-label="Approve review"
@@ -190,7 +281,7 @@ export default function AdminReviewsPage() {
                       <CheckCircle2 className="w-5 h-5" />
                     </button>
                     <button
-                      onClick={() => rejectReview(review.id)}
+                      onClick={() => rejectReview(review._id)}
                       className="p-2 rounded-[4px] text-error hover:bg-error/10 transition-colors"
                       title="Reject"
                       aria-label="Reject review"
@@ -201,7 +292,7 @@ export default function AdminReviewsPage() {
                 ) : (
                   <>
                     <button
-                      onClick={() => toggleFeatured(review.id)}
+                      onClick={() => toggleFeatured(review._id)}
                       className={cn(
                         "p-2 rounded-[4px] transition-colors",
                         review.isFeatured
@@ -218,7 +309,7 @@ export default function AdminReviewsPage() {
                       )}
                     </button>
                     <button
-                      onClick={() => deleteReview(review.id)}
+                      onClick={() => deleteReview(review._id)}
                       className="p-2 rounded-[4px] text-text-muted hover:text-error hover:bg-error/10 transition-colors"
                       title="Delete"
                       aria-label="Delete review"

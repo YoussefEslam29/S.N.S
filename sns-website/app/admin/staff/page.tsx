@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Plus,
   X,
@@ -8,32 +8,25 @@ import {
   ToggleLeft,
   ToggleRight,
   Trash2,
-  UserCog,
   Shield,
   Wrench,
   CalendarDays,
   AlertCircle,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LoadingOverlay } from "@/components/LoadingOverlay";
 
 type UserRole = "admin" | "receptionist" | "technician";
 
 interface StaffMember {
-  id: string;
+  _id: string;
   name: string;
   email: string;
   role: UserRole;
   isActive: boolean;
   createdAt: string;
 }
-
-/* ─── Placeholder data ─── */
-const initialStaff: StaffMember[] = [
-  { id: "1", name: "Admin User", email: "admin@sns.com", role: "admin", isActive: true, createdAt: "2025-01-01" },
-  { id: "2", name: "Receptionist", email: "reception@sns.com", role: "receptionist", isActive: true, createdAt: "2025-03-15" },
-  { id: "3", name: "Technician 1", email: "tech1@sns.com", role: "technician", isActive: true, createdAt: "2025-04-01" },
-  { id: "4", name: "Technician 2", email: "tech2@sns.com", role: "technician", isActive: false, createdAt: "2025-05-10" },
-];
 
 const roleConfig: Record<UserRole, { label: string; icon: typeof Shield; color: string }> = {
   admin: { label: "Admin", icon: Shield, color: "bg-primary/10 text-primary" },
@@ -42,9 +35,11 @@ const roleConfig: Record<UserRole, { label: string; icon: typeof Shield; color: 
 };
 
 export default function AdminStaffPage() {
-  const [staff, setStaff] = useState(initialStaff);
+  const [staff, setStaff] = useState<StaffMember[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -52,51 +47,121 @@ export default function AdminStaffPage() {
     role: "receptionist" as UserRole,
   });
 
-  const toggleActive = (id: string) => {
-    setStaff((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, isActive: !s.isActive } : s))
-    );
+  const fetchStaff = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/users");
+      if (!res.ok) throw new Error("Failed to fetch staff");
+      const data = await res.json();
+      setStaff(data.data ?? []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStaff();
+  }, [fetchStaff]);
+
+  const toggleActive = async (member: StaffMember) => {
+    try {
+      setSaving(true);
+      const res = await fetch(`/api/users/${member._id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: !member.isActive }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to toggle status");
+      }
+      setStaff((prev) =>
+        prev.map((s) => (s._id === member._id ? { ...s, isActive: !s.isActive } : s))
+      );
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Toggle failed");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const deleteStaff = (id: string) => {
+  const deleteStaff = async (member: StaffMember) => {
     // Don't allow deleting the last admin
-    const member = staff.find((s) => s.id === id);
-    if (member?.role === "admin") {
-      const adminCount = staff.filter((s) => s.role === "admin" && s.id !== id).length;
+    if (member.role === "admin") {
+      const adminCount = staff.filter((s) => s.role === "admin" && s._id !== member._id).length;
       if (adminCount === 0) {
         setError("Cannot delete the last admin account.");
         setTimeout(() => setError(""), 3000);
         return;
       }
     }
-    setStaff((prev) => prev.filter((s) => s.id !== id));
+
+    if (!confirm(`Are you sure you want to permanently delete ${member.name}?`)) return;
+
+    try {
+      setSaving(true);
+      const res = await fetch(`/api/users/${member._id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to delete staff member");
+      }
+      setStaff((prev) => prev.filter((s) => s._id !== member._id));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Delete failed");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!formData.name || !formData.email || !formData.password) return;
     if (formData.password.length < 6) {
       setError("Password must be at least 6 characters.");
       return;
     }
 
-    setStaff((prev) => [
-      ...prev,
-      {
-        id: Date.now().toString(),
-        name: formData.name,
-        email: formData.email.toLowerCase(),
-        role: formData.role,
-        isActive: true,
-        createdAt: new Date().toISOString().split("T")[0],
-      },
-    ]);
-    setFormData({ name: "", email: "", password: "", role: "receptionist" });
-    setIsCreating(false);
-    setError("");
+    try {
+      setSaving(true);
+      setError("");
+      const res = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          role: formData.role,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to create staff member");
+      }
+
+      setFormData({ name: "", email: "", password: "", role: "receptionist" });
+      setIsCreating(false);
+      await fetchStaff();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Create failed");
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-6 h-6 text-primary animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
+      <LoadingOverlay show={saving} message="Saving staff details..." />
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
@@ -146,7 +211,7 @@ export default function AdminStaffPage() {
           const RoleIcon = role.icon;
           return (
             <div
-              key={member.id}
+              key={member._id}
               className={cn(
                 "flex items-center justify-between p-4 transition-colors",
                 !member.isActive && "opacity-50"
@@ -176,7 +241,7 @@ export default function AdminStaffPage() {
                   Since {new Date(member.createdAt).toLocaleDateString("en", { month: "short", year: "numeric" })}
                 </span>
                 <button
-                  onClick={() => toggleActive(member.id)}
+                  onClick={() => toggleActive(member)}
                   className="p-1.5 rounded-[4px] transition-colors"
                   title={member.isActive ? "Deactivate" : "Activate"}
                   aria-label={member.isActive ? "Deactivate" : "Activate"}
@@ -188,7 +253,7 @@ export default function AdminStaffPage() {
                   )}
                 </button>
                 <button
-                  onClick={() => deleteStaff(member.id)}
+                  onClick={() => deleteStaff(member)}
                   className="p-1.5 rounded-[4px] text-text-muted hover:text-error hover:bg-error/10 transition-colors"
                   title="Delete"
                   aria-label="Delete"
@@ -199,6 +264,12 @@ export default function AdminStaffPage() {
             </div>
           );
         })}
+
+        {staff.length === 0 && (
+          <div className="py-12 text-center text-text-muted text-sm">
+            No staff members found.
+          </div>
+        )}
       </div>
 
       {/* Create Staff Modal */}
@@ -279,9 +350,10 @@ export default function AdminStaffPage() {
               </button>
               <button
                 onClick={handleCreate}
-                className="flex items-center gap-2 h-9 px-4 bg-primary hover:bg-primary-hover text-white text-sm font-medium rounded-[4px] transition-colors"
+                disabled={saving}
+                className="flex items-center gap-2 h-9 px-4 bg-primary hover:bg-primary-hover text-white text-sm font-medium rounded-[4px] transition-colors disabled:opacity-50"
               >
-                <Save className="w-4 h-4" />
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Create
               </button>
             </div>

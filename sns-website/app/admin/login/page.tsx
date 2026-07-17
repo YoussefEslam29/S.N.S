@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { signIn } from "next-auth/react";
 import { Shield, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { LoadingOverlay } from "@/components/LoadingOverlay";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -41,6 +42,7 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-[calc(100vh-5rem)] flex items-center justify-center py-12">
+      <LoadingOverlay show={isLoading} message="Logging you in..." />
       <div className="w-full max-w-sm mx-4">
         {/* Logo & Header */}
         <div className="text-center mb-8">

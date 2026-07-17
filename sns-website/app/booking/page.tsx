@@ -21,6 +21,7 @@ import {
 import { VehicleSelector, type VehicleType } from "@/components/services/VehicleSelector";
 import { formatPrice, cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
+import { LoadingOverlay } from "@/components/LoadingOverlay";
 
 interface ApiService {
   _id: string;
@@ -297,6 +298,7 @@ function BookingContent() {
 
   return (
     <div className="py-12 md:py-20">
+      <LoadingOverlay show={submitting} message={locale === "ar" ? "جاري إرسال الحجز..." : "Submitting booking..."} />
       <div className="container-sns max-w-3xl">
         {/* Header */}
         <div className="text-center mb-10">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Search,
   Phone,
@@ -9,44 +9,76 @@ import {
   Calendar,
   ChevronRight,
   X,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CustomerItem {
-  id: string;
+  _id: string;
   name: string;
   phone: string;
   email?: string;
   vehicleType: string;
   vehicleMake?: string;
   vehicleModel?: string;
-  bookingsCount: number;
-  lastVisit: string;
   notes?: string;
+  createdAt: string;
 }
 
-/* ─── Placeholder data ─── */
-const initialCustomers: CustomerItem[] = [
-  { id: "1", name: "Ahmed M.", phone: "0115 335 3362", email: "ahmed@email.com", vehicleType: "sedan", vehicleMake: "BMW", vehicleModel: "320i", bookingsCount: 5, lastVisit: "2025-06-28", notes: "Regular customer, prefers chemical wiping wash" },
-  { id: "2", name: "Mohamed K.", phone: "0108 080 6061", vehicleType: "suv", vehicleMake: "BMW", vehicleModel: "X5", bookingsCount: 2, lastVisit: "2025-06-15" },
-  { id: "3", name: "Sara A.", phone: "0123 456 7890", email: "sara@email.com", vehicleType: "sedan", vehicleMake: "Mercedes", vehicleModel: "C200", bookingsCount: 3, lastVisit: "2025-07-01" },
-  { id: "4", name: "Omar H.", phone: "0111 222 3333", vehicleType: "suv", vehicleMake: "Hyundai", vehicleModel: "Tucson", bookingsCount: 1, lastVisit: "2025-05-20" },
-  { id: "5", name: "Youssef E.", phone: "0100 111 2222", vehicleType: "truck", vehicleMake: "Toyota", vehicleModel: "Land Cruiser", bookingsCount: 4, lastVisit: "2025-07-03" },
-  { id: "6", name: "Nour R.", phone: "0112 333 4444", email: "nour@email.com", vehicleType: "sedan", vehicleMake: "Kia", vehicleModel: "Cerato", bookingsCount: 2, lastVisit: "2025-06-10" },
-  { id: "7", name: "Hassan F.", phone: "0155 666 7777", vehicleType: "suv", vehicleMake: "Range Rover", vehicleModel: "Sport", bookingsCount: 3, lastVisit: "2025-06-25" },
-];
-
 export default function AdminCustomersPage() {
-  const [customers] = useState(initialCustomers);
+  const [customers, setCustomers] = useState<CustomerItem[]>([]);
   const [search, setSearch] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerItem | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [total, setTotal] = useState(0);
 
-  const filtered = customers.filter(
-    (c) =>
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.phone.includes(search) ||
-      (c.vehicleMake && c.vehicleMake.toLowerCase().includes(search.toLowerCase()))
-  );
+  const fetchCustomers = useCallback(async (searchQuery?: string) => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams({ limit: "100" });
+      if (searchQuery) params.set("search", searchQuery);
+      const res = await fetch(`/api/customers?${params}`);
+      if (!res.ok) throw new Error("Failed to fetch customers");
+      const data = await res.json();
+      setCustomers(data.data ?? []);
+      setTotal(data.total ?? 0);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCustomers();
+  }, [fetchCustomers]);
+
+  // Debounced search
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      fetchCustomers(search || undefined);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [search, fetchCustomers]);
+
+  if (loading && customers.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-6 h-6 text-primary animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64 text-error">
+        <AlertCircle className="w-5 h-5 mr-2" />
+        <span className="text-sm">{error}</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -56,7 +88,7 @@ export default function AdminCustomersPage() {
           Customers
         </h1>
         <p className="text-sm text-text-secondary mt-1">
-          {customers.length} customers in your database.
+          {total} customer{total !== 1 ? "s" : ""} in your database.
         </p>
       </div>
 
@@ -74,9 +106,9 @@ export default function AdminCustomersPage() {
 
       {/* Customers List */}
       <div className="rounded-[4px] border border-border bg-surface divide-y divide-border">
-        {filtered.map((customer) => (
+        {customers.map((customer) => (
           <button
-            key={customer.id}
+            key={customer._id}
             onClick={() => setSelectedCustomer(customer)}
             className="w-full flex items-center justify-between p-4 hover:bg-surface-elevated/50 transition-colors text-left"
           >
@@ -104,11 +136,11 @@ export default function AdminCustomersPage() {
             </div>
             <div className="flex items-center gap-3">
               <div className="text-right hidden sm:block">
-                <p className="text-xs text-text-muted">
-                  {customer.bookingsCount} bookings
+                <p className="text-xs text-text-muted uppercase">
+                  {customer.vehicleType}
                 </p>
                 <p className="text-[10px] text-text-muted">
-                  Last: {new Date(customer.lastVisit).toLocaleDateString("en", { month: "short", day: "numeric" })}
+                  Added: {new Date(customer.createdAt).toLocaleDateString("en", { month: "short", day: "numeric" })}
                 </p>
               </div>
               <ChevronRight className="w-4 h-4 text-text-muted" />
@@ -116,7 +148,7 @@ export default function AdminCustomersPage() {
           </button>
         ))}
 
-        {filtered.length === 0 && (
+        {customers.length === 0 && (
           <div className="py-12 text-center text-text-muted text-sm">
             No customers found.
           </div>
@@ -156,8 +188,7 @@ export default function AdminCustomersPage() {
                 { icon: Phone, label: "Phone", value: selectedCustomer.phone, href: `tel:${selectedCustomer.phone.replace(/\s/g, "")}` },
                 ...(selectedCustomer.email ? [{ icon: Mail, label: "Email", value: selectedCustomer.email, href: `mailto:${selectedCustomer.email}` }] : []),
                 { icon: Car, label: "Vehicle", value: `${selectedCustomer.vehicleMake || ""} ${selectedCustomer.vehicleModel || ""}`.trim() || selectedCustomer.vehicleType },
-                { icon: Calendar, label: "Bookings", value: `${selectedCustomer.bookingsCount} total` },
-                { icon: Calendar, label: "Last Visit", value: new Date(selectedCustomer.lastVisit).toLocaleDateString("en", { weekday: "short", month: "long", day: "numeric", year: "numeric" }) },
+                { icon: Calendar, label: "Joined", value: new Date(selectedCustomer.createdAt).toLocaleDateString("en", { weekday: "short", month: "long", day: "numeric", year: "numeric" }) },
               ].map((row) => {
                 const Icon = row.icon;
                 return (

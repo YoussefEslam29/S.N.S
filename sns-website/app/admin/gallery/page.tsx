@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Plus,
   Trash2,
@@ -10,28 +10,21 @@ import {
   Save,
   Image as ImageIcon,
   Search,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LoadingOverlay } from "@/components/LoadingOverlay";
 
 interface GalleryAdminItem {
-  id: string;
-  titleEn: string;
-  titleAr: string;
+  _id: string;
+  title: { en: string; ar: string };
   beforeImage: string;
   afterImage: string;
-  category: string;
+  service?: { _id: string; name: { en: string }; category: string } | null;
   vehicleType: string;
   isFeatured: boolean;
 }
-
-/* ─── Placeholder data ─── */
-const initialItems: GalleryAdminItem[] = [
-  { id: "1", titleEn: "BMW X5 — Full PPF Wrap", titleAr: "BMW X5 — تغليف PPF كامل", beforeImage: "/gallery/before-1.jpg", afterImage: "/gallery/after-1.jpg", category: "ppf", vehicleType: "suv", isFeatured: true },
-  { id: "2", titleEn: "Mercedes C-Class — Ceramic Coating", titleAr: "مرسيدس C — طلاء سيراميك", beforeImage: "/gallery/before-2.jpg", afterImage: "/gallery/after-2.jpg", category: "ceramic-coating", vehicleType: "sedan", isFeatured: true },
-  { id: "3", titleEn: "Toyota Land Cruiser — Interior Detail", titleAr: "تويوتا لاند كروزر — تفصيل داخلي", beforeImage: "/gallery/before-3.jpg", afterImage: "/gallery/after-3.jpg", category: "detailing", vehicleType: "truck", isFeatured: false },
-  { id: "4", titleEn: "Hyundai Tucson — Window Tinting", titleAr: "هيونداي توسان — تظليل", beforeImage: "/gallery/before-4.jpg", afterImage: "/gallery/after-4.jpg", category: "tinting", vehicleType: "suv", isFeatured: false },
-  { id: "5", titleEn: "Kia Cerato — Premium Wash", titleAr: "كيا سيراتو — غسيل بريميوم", beforeImage: "/gallery/before-5.jpg", afterImage: "/gallery/after-5.jpg", category: "wash", vehicleType: "sedan", isFeatured: true },
-];
 
 const categoryLabels: Record<string, string> = {
   wash: "Car Wash",
@@ -50,9 +43,12 @@ const categoryColors: Record<string, string> = {
 };
 
 export default function AdminGalleryPage() {
-  const [items, setItems] = useState(initialItems);
+  const [items, setItems] = useState<GalleryAdminItem[]>([]);
   const [search, setSearch] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     titleEn: "",
     titleAr: "",
@@ -63,42 +59,126 @@ export default function AdminGalleryPage() {
     isFeatured: false,
   });
 
+  const fetchItems = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/gallery");
+      if (!res.ok) throw new Error("Failed to fetch gallery items");
+      const data = await res.json();
+      setItems(data.data ?? []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchItems();
+  }, [fetchItems]);
+
   const filtered = items.filter((item) =>
-    item.titleEn.toLowerCase().includes(search.toLowerCase())
+    item.title.en.toLowerCase().includes(search.toLowerCase())
   );
 
-  const toggleFeatured = (id: string) => {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, isFeatured: !item.isFeatured } : item
-      )
-    );
+  const toggleFeatured = async (id: string) => {
+    const item = items.find((i) => i._id === id);
+    if (!item) return;
+    try {
+      setSaving(true);
+      const res = await fetch(`/api/gallery/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isFeatured: !item.isFeatured }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to toggle featured");
+      }
+      setItems((prev) =>
+        prev.map((i) => (i._id === id ? { ...i, isFeatured: !i.isFeatured } : i))
+      );
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Toggle failed");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const deleteItem = (id: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
+  const deleteItem = async (id: string) => {
+    if (!confirm("Are you sure you want to permanently delete this gallery item?")) return;
+    try {
+      setSaving(true);
+      const res = await fetch(`/api/gallery/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to delete item");
+      }
+      setItems((prev) => prev.filter((item) => item._id !== id));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Delete failed");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!formData.titleEn || !formData.beforeImage || !formData.afterImage) return;
-    setItems((prev) => [
-      { id: Date.now().toString(), ...formData },
-      ...prev,
-    ]);
-    setFormData({
-      titleEn: "",
-      titleAr: "",
-      beforeImage: "",
-      afterImage: "",
-      category: "wash",
-      vehicleType: "sedan",
-      isFeatured: false,
-    });
-    setIsAdding(false);
+    try {
+      setSaving(true);
+      const res = await fetch("/api/gallery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: { en: formData.titleEn, ar: formData.titleAr },
+          beforeImage: formData.beforeImage,
+          afterImage: formData.afterImage,
+          vehicleType: formData.vehicleType,
+          isFeatured: formData.isFeatured,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to add gallery item");
+      }
+      setFormData({
+        titleEn: "",
+        titleAr: "",
+        beforeImage: "",
+        afterImage: "",
+        category: "wash",
+        vehicleType: "sedan",
+        isFeatured: false,
+      });
+      setIsAdding(false);
+      await fetchItems();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Save failed");
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-6 h-6 text-primary animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64 text-error">
+        <AlertCircle className="w-5 h-5 mr-2" />
+        <span className="text-sm">{error}</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
+      <LoadingOverlay show={saving} message="Saving gallery details..." />
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
@@ -132,83 +212,110 @@ export default function AdminGalleryPage() {
 
       {/* Gallery Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filtered.map((item) => (
-          <div
-            key={item.id}
-            className="rounded-[4px] border border-border bg-surface overflow-hidden"
-          >
-            {/* Image placeholders */}
-            <div className="grid grid-cols-2 gap-px bg-border">
-              <div className="aspect-[4/3] bg-surface-elevated flex items-center justify-center">
-                <div className="text-center">
-                  <ImageIcon className="w-6 h-6 text-text-muted mx-auto mb-1" />
-                  <span className="text-[10px] text-text-muted">Before</span>
+        {filtered.map((item) => {
+          const category = item.service?.category || "";
+          return (
+            <div
+              key={item._id}
+              className="rounded-[4px] border border-border bg-surface overflow-hidden"
+            >
+              {/* Image placeholders */}
+              <div className="grid grid-cols-2 gap-px bg-border">
+                <div className="aspect-[4/3] bg-surface-elevated flex items-center justify-center">
+                  {item.beforeImage ? (
+                    <img
+                      src={item.beforeImage}
+                      alt="Before"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = "none";
+                        (e.target as HTMLImageElement).nextElementSibling?.classList.remove("hidden");
+                      }}
+                    />
+                  ) : null}
+                  <div className={cn("text-center", item.beforeImage && "hidden")}>
+                    <ImageIcon className="w-6 h-6 text-text-muted mx-auto mb-1" />
+                    <span className="text-[10px] text-text-muted">Before</span>
+                  </div>
+                </div>
+                <div className="aspect-[4/3] bg-surface-elevated flex items-center justify-center">
+                  {item.afterImage ? (
+                    <img
+                      src={item.afterImage}
+                      alt="After"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = "none";
+                        (e.target as HTMLImageElement).nextElementSibling?.classList.remove("hidden");
+                      }}
+                    />
+                  ) : null}
+                  <div className={cn("text-center", item.afterImage && "hidden")}>
+                    <ImageIcon className="w-6 h-6 text-text-muted mx-auto mb-1" />
+                    <span className="text-[10px] text-text-muted">After</span>
+                  </div>
                 </div>
               </div>
-              <div className="aspect-[4/3] bg-surface-elevated flex items-center justify-center">
-                <div className="text-center">
-                  <ImageIcon className="w-6 h-6 text-text-muted mx-auto mb-1" />
-                  <span className="text-[10px] text-text-muted">After</span>
+
+              {/* Info */}
+              <div className="p-4 space-y-3">
+                <div>
+                  <h3 className="text-sm font-medium text-text-primary">
+                    {item.title.en}
+                  </h3>
+                  <p className="text-xs text-text-muted mt-0.5 font-arabic" dir="rtl">
+                    {item.title.ar}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {category && (
+                    <span
+                      className={`px-2 py-0.5 text-[10px] uppercase tracking-wider font-medium rounded-[4px] ${
+                        categoryColors[category] || "bg-surface-elevated text-text-muted"
+                      }`}
+                    >
+                      {categoryLabels[category] || category}
+                    </span>
+                  )}
+                  <span className="text-[10px] text-text-muted uppercase">
+                    {item.vehicleType}
+                  </span>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center justify-between pt-2 border-t border-border">
+                  <button
+                    onClick={() => toggleFeatured(item._id)}
+                    className={cn(
+                      "flex items-center gap-1.5 text-xs font-medium transition-colors",
+                      item.isFeatured
+                        ? "text-amber-400 hover:text-amber-300"
+                        : "text-text-muted hover:text-amber-400"
+                    )}
+                  >
+                    {item.isFeatured ? (
+                      <Star className="w-4 h-4 fill-amber-400" />
+                    ) : (
+                      <StarOff className="w-4 h-4" />
+                    )}
+                    {item.isFeatured ? "Featured" : "Feature"}
+                  </button>
+                  <button
+                    onClick={() => deleteItem(item._id)}
+                    className="p-1.5 rounded-[4px] text-text-muted hover:text-error hover:bg-error/10 transition-colors"
+                    aria-label="Delete"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             </div>
-
-            {/* Info */}
-            <div className="p-4 space-y-3">
-              <div>
-                <h3 className="text-sm font-medium text-text-primary">
-                  {item.titleEn}
-                </h3>
-                <p className="text-xs text-text-muted mt-0.5 font-arabic" dir="rtl">
-                  {item.titleAr}
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span
-                  className={`px-2 py-0.5 text-[10px] uppercase tracking-wider font-medium rounded-[4px] ${
-                    categoryColors[item.category] || "bg-surface-elevated text-text-muted"
-                  }`}
-                >
-                  {categoryLabels[item.category] || item.category}
-                </span>
-                <span className="text-[10px] text-text-muted uppercase">
-                  {item.vehicleType}
-                </span>
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center justify-between pt-2 border-t border-border">
-                <button
-                  onClick={() => toggleFeatured(item.id)}
-                  className={cn(
-                    "flex items-center gap-1.5 text-xs font-medium transition-colors",
-                    item.isFeatured
-                      ? "text-amber-400 hover:text-amber-300"
-                      : "text-text-muted hover:text-amber-400"
-                  )}
-                >
-                  {item.isFeatured ? (
-                    <Star className="w-4 h-4 fill-amber-400" />
-                  ) : (
-                    <StarOff className="w-4 h-4" />
-                  )}
-                  {item.isFeatured ? "Featured" : "Feature"}
-                </button>
-                <button
-                  onClick={() => deleteItem(item.id)}
-                  className="p-1.5 rounded-[4px] text-text-muted hover:text-error hover:bg-error/10 transition-colors"
-                  aria-label="Delete"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      {filtered.length === 0 && (
+      {filtered.length === 0 && !loading && (
         <div className="py-12 text-center text-text-muted text-sm">
           No gallery items found.
         </div>
@@ -290,24 +397,6 @@ export default function AdminGalleryPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-text-secondary mb-1">
-                  Category
-                </label>
-                <select
-                  value={formData.category}
-                  onChange={(e) =>
-                    setFormData({ ...formData, category: e.target.value })
-                  }
-                  className="w-full h-9 px-3 rounded-[4px] border border-border bg-surface-elevated text-text-primary text-sm focus:border-primary outline-none"
-                >
-                  {Object.entries(categoryLabels).map(([k, v]) => (
-                    <option key={k} value={k}>
-                      {v}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-text-secondary mb-1">
                   Vehicle Type
                 </label>
                 <select
@@ -348,9 +437,10 @@ export default function AdminGalleryPage() {
               </button>
               <button
                 onClick={handleAdd}
-                className="flex items-center gap-2 h-9 px-4 bg-primary hover:bg-primary-hover text-white text-sm font-medium rounded-[4px] transition-colors"
+                disabled={saving}
+                className="flex items-center gap-2 h-9 px-4 bg-primary hover:bg-primary-hover text-white text-sm font-medium rounded-[4px] transition-colors disabled:opacity-50"
               >
-                <Save className="w-4 h-4" />
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Add Item
               </button>
             </div>

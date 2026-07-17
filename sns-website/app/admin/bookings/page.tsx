@@ -17,6 +17,7 @@ import {
   CreditCard,
 } from "lucide-react";
 import { cn, formatPrice } from "@/lib/utils";
+import { LoadingOverlay } from "@/components/LoadingOverlay";
 
 type BookingStatus = "pending" | "confirmed" | "in-progress" | "completed" | "cancelled";
 
@@ -228,6 +229,7 @@ export default function AdminBookingsPage() {
 
   return (
     <div className="space-y-6">
+      <LoadingOverlay show={updatingStatus || markingInstallment !== null} message="Updating booking details..." />
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>

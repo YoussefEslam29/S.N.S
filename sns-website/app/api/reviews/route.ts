@@ -3,15 +3,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Review } from "@/models/Review";
+import { auth } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
   try {
-    await connectDB();
-
     const { searchParams } = new URL(req.url);
+    const showAll = searchParams.get("all") === "true";
     const featured = searchParams.get("featured");
 
-    const filter: Record<string, unknown> = { isApproved: true };
+    // If requesting all (including non-approved), require auth
+    if (showAll) {
+      const session = await auth();
+      if (!session) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+    }
+
+    await connectDB();
+
+    const filter: Record<string, unknown> = showAll ? {} : { isApproved: true };
     if (featured === "true") filter.isFeatured = true;
 
     const reviews = await Review.find(filter)
