@@ -118,4 +118,19 @@ We added system fixes to guarantee database connection success across any ISP an
   * Admin Staff creation & toggle active status
   * Admin Reviews approval & featured actions
 
+---
 
+## 9. Next.js 16 Routing and Auth Proxy Migration (proxy.ts)
+* **Problem**: Next.js 16.2.10 (Turbopack) deprecates the legacy `middleware.ts` convention in favor of `proxy.ts`. When NextAuth v5's middleware wrapper `auth` was exported as a default export from a `middleware.ts` file, the Next.js routing engine intercepted all requests (including public pages `/services`, `/booking`, `/gallery`, `/reviews`) and erroneously returned a `404 This page could not be found` page, ignoring the matcher rules.
+* **Solution**:
+  1. **Rename File**: Rename `middleware.ts` to `proxy.ts` at the root of the project.
+  2. **Named Export**: Instead of a default export, export the NextAuth `auth` function as a named `proxy` export:
+     ```typescript
+     export { auth as proxy };
+     ```
+  3. **Restrict Matcher**: Set the matcher rules to only intercept administration routes:
+     ```typescript
+     export const config = {
+       matcher: ["/admin/:path*"],
+     };
+     ```
