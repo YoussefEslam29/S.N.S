@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { Menu, X, Phone, Globe } from "lucide-react";
 import { useLanguage } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 
 const navLinkKeys = [
   { href: "/", labelKey: "nav.home" },
@@ -18,6 +20,7 @@ export function Navbar() {
   const { t, locale, setLocale } = useLanguage();
 
   const toggleLang = () => setLocale(locale === "en" ? "ar" : "en");
+  const pathname = usePathname();
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
@@ -35,16 +38,29 @@ export function Navbar() {
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-8">
-          {navLinkKeys.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors duration-200 relative group"
-            >
-              {t(link.labelKey)}
-              <span className="absolute -bottom-1 inset-inline-start-0 w-0 h-[2px] bg-primary transition-all duration-300 group-hover:w-full" />
-            </Link>
-          ))}
+          {navLinkKeys.map((link) => {
+            const isActive = pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  "text-sm font-medium transition-colors duration-200 relative group",
+                  isActive
+                    ? "text-primary font-semibold"
+                    : "text-text-secondary hover:text-text-primary"
+                )}
+              >
+                {t(link.labelKey)}
+                <span
+                  className={cn(
+                    "absolute -bottom-1 start-0 h-[2px] bg-primary transition-all duration-300",
+                    isActive ? "w-full" : "w-0 group-hover:w-full"
+                  )}
+                />
+              </Link>
+            );
+          })}
         </div>
 
         {/* Desktop CTA + Language Toggle */}
@@ -90,16 +106,24 @@ export function Navbar() {
       {isOpen && (
         <div className="md:hidden border-t border-border bg-background animate-fade-in">
           <div className="container-sns py-4 flex flex-col gap-1">
-            {navLinkKeys.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setIsOpen(false)}
-                className="py-3 px-4 text-base font-medium text-text-secondary hover:text-text-primary hover:bg-surface rounded-[4px] transition-colors"
-              >
-                {t(link.labelKey)}
-              </Link>
-            ))}
+            {navLinkKeys.map((link) => {
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setIsOpen(false)}
+                  className={cn(
+                    "py-3 px-4 text-base font-medium rounded-[4px] transition-colors block",
+                    isActive
+                      ? "text-primary bg-primary/5 font-semibold"
+                      : "text-text-secondary hover:text-text-primary hover:bg-surface"
+                  )}
+                >
+                  {t(link.labelKey)}
+                </Link>
+              );
+            })}
             <div className="mt-3 pt-3 border-t border-border space-y-2">
               {/* Mobile Language Toggle */}
               <button
