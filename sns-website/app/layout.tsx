@@ -3,6 +3,7 @@ import { Inter, Outfit, IBM_Plex_Sans_Arabic } from "next/font/google";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { LoadingScreen } from "@/components/LoadingScreen";
+import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { LanguageProvider } from "@/lib/i18n";
 import "./globals.css";
 
@@ -69,6 +70,7 @@ export default function RootLayout({
           <LoadingScreen />
           <Navbar />
           <main className="flex-1">{children}</main>
+          <WhatsAppButton />
           <Footer />
         </LanguageProvider>
       </body>

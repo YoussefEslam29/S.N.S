@@ -96,7 +96,8 @@ const valueProps = [
 
 export default function HomePage() {
   const [vehicleType, setVehicleType] = useState<VehicleType>("sedan");
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
+  const isRTL = locale === "ar";
 
   return (
     <>
@@ -110,10 +111,10 @@ export default function HomePage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             {/* Left Column - Content */}
             <motion.div 
-              initial={{ opacity: 0, x: -30 }}
+              initial={{ opacity: 0, x: isRTL ? 30 : -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, ease: "easeOut" }}
-              className="lg:col-span-7 space-y-8 text-center lg:text-left flex flex-col items-center lg:items-start"
+              className="lg:col-span-7 space-y-8 text-center lg:text-start flex flex-col items-center lg:items-start"
             >
               {/* Tagline badge */}
               <motion.div 
@@ -131,7 +132,7 @@ export default function HomePage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3, duration: 0.6 }}
-                className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-heading font-bold leading-[1.1] text-center lg:text-left"
+                className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-heading font-bold leading-[1.1] text-center lg:text-start"
               >
                 <span className="text-text-primary">{t("hero.care")}</span>
                 <span className="chrome-text">{t("hero.shine")}</span>
@@ -143,7 +144,7 @@ export default function HomePage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4, duration: 0.6 }}
-                className="text-base md:text-lg text-text-secondary max-w-xl leading-relaxed text-center lg:text-left"
+                className="text-base md:text-lg text-text-secondary max-w-xl leading-relaxed text-center lg:text-start"
               >
                 {t("hero.subtitle")}
               </motion.p>
@@ -154,6 +155,7 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5, duration: 0.6 }}
                 className="flex flex-col items-center lg:items-start gap-4 w-full"
+                dir={isRTL ? "rtl" : "ltr"}
               >
                 <p className="text-sm text-text-muted">{t("hero.vehiclePrompt")}</p>
                 <VehicleSelector
@@ -175,21 +177,21 @@ export default function HomePage() {
                   className="w-full sm:w-auto inline-flex items-center justify-center h-12 px-8 bg-primary hover:bg-primary-hover text-white font-semibold rounded-[4px] text-base transition-all duration-200 hover:shadow-lg hover:shadow-primary/20 gap-2"
                 >
                   {t("hero.bookSession")}
-                  <ArrowRight className="w-5 h-5" />
+                  <ArrowRight className={`w-5 h-5 ${isRTL ? 'rotate-180' : ''}`} />
                 </Link>
                 <Link
                   href="/services"
                   className="w-full sm:w-auto inline-flex items-center justify-center h-12 px-8 bg-surface-elevated hover:bg-surface-hover text-text-primary font-medium rounded-[4px] text-base transition-all duration-200 border border-border gap-2"
                 >
                   {t("hero.browseServices")}
-                  <ChevronRight className="w-5 h-5" />
+                  <ChevronRight className={`w-5 h-5 ${isRTL ? 'rotate-180' : ''}`} />
                 </Link>
               </motion.div>
             </motion.div>
 
             {/* Right Column - Visual Showcase */}
             <motion.div 
-              initial={{ opacity: 0, scale: 0.9, x: 30 }}
+              initial={{ opacity: 0, scale: 0.9, x: isRTL ? -30 : 30 }}
               animate={{ opacity: 1, scale: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
               className="lg:col-span-5 flex justify-center items-center relative"
@@ -304,7 +306,7 @@ export default function HomePage() {
                     {/* Arrow */}
                     <div className="flex items-center gap-1 text-sm text-text-muted group-hover:text-primary transition-colors">
                       {t("services.viewDetails")}
-                      <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                      <ChevronRight className={`w-4 h-4 transition-transform ${isRTL ? 'rotate-180 group-hover:-translate-x-1' : 'group-hover:translate-x-1'}`} />
                     </div>
                   </div>
                 </Link>
@@ -368,49 +370,19 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* Placeholder for Google Reviews - will be populated from API */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                name: "Ahmed M.",
-                rating: 5,
-                text: "Best car wash in Alexandria! The ceramic coating made my car look brand new. Professional service and fair pricing.",
-                time: "2 weeks ago",
-              },
-              {
-                name: "Mohamed K.",
-                rating: 5,
-                text: "Got PPF installed on my BMW. Incredible quality work. The team really knows what they're doing with paint protection.",
-                time: "1 month ago",
-              },
-              {
-                name: "Sara A.",
-                rating: 5,
-                text: "Finally a car care shop that shows prices upfront. The full wash package at 300 EGP is excellent value. Will definitely be back!",
-                time: "3 weeks ago",
-              },
-            ].map((review, i) => (
-              <div
-                key={i}
-                className="p-6 rounded-[4px] bg-surface border border-border animate-fade-in-up"
-                style={{ animationDelay: `${i * 0.1}s` }}
-              >
-                <div className="flex items-center gap-1 mb-3">
-                  {[...Array(review.rating)].map((_, j) => (
-                    <Star key={j} className="w-4 h-4 fill-amber-400 text-amber-400" />
-                  ))}
-                </div>
-                <p className="text-sm text-text-secondary leading-relaxed mb-4">
-                  &ldquo;{review.text}&rdquo;
-                </p>
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-text-primary">
-                    {review.name}
-                  </p>
-                  <p className="text-xs text-text-muted">{review.time}</p>
-                </div>
-              </div>
-            ))}
+          {/* Reviews link — real reviews are on the /reviews page */}
+          <div className="text-center py-12 rounded-[4px] bg-surface border border-border border-dashed">
+            <Star className="w-10 h-10 mx-auto text-amber-400/30 mb-3" />
+            <p className="text-text-secondary text-sm mb-4">
+              {locale === "ar" ? "اقرأ تقييمات عملائنا الحقيقية" : "Read real reviews from our customers"}
+            </p>
+            <Link
+              href="/reviews"
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary hover:bg-primary-hover text-white font-semibold rounded-[4px] text-sm transition-colors"
+            >
+              {locale === "ar" ? "عرض التقييمات" : "View Reviews"}
+              <ArrowRight className={`w-4 h-4 ${isRTL ? 'rotate-180' : ''}`} />
+            </Link>
           </div>
 
           <div className="text-center mt-8">
@@ -421,7 +393,7 @@ export default function HomePage() {
               className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary-light transition-colors"
             >
               {t("reviews.seeAll")}
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className={`w-4 h-4 ${isRTL ? 'rotate-180' : ''}`} />
             </a>
           </div>
         </div>
@@ -446,7 +418,7 @@ export default function HomePage() {
             className="inline-flex items-center justify-center h-14 px-10 bg-primary hover:bg-primary-hover text-white font-bold rounded-[4px] text-lg transition-all duration-200 hover:shadow-lg hover:shadow-primary/25 gap-2"
           >
             {t("nav.bookNow")}
-            <ArrowRight className="w-5 h-5" />
+            <ArrowRight className={`w-5 h-5 ${isRTL ? 'rotate-180' : ''}`} />
           </Link>
         </div>
       </section>

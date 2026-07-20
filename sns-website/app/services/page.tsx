@@ -82,11 +82,10 @@ export default function ServicesPage() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-3xl md:text-5xl font-heading font-bold text-text-primary mb-4">
-            Our Services
+            {t("services.title")}
           </h1>
           <p className="text-text-secondary max-w-lg mx-auto mb-8">
-            From a quick wash to full paint protection — everything your car needs,
-            with transparent pricing for your vehicle.
+            {t("services.subtitle")}
           </p>
 
           {/* Vehicle Selector */}
@@ -187,7 +186,9 @@ export default function ServicesPage() {
                     <div className="flex items-end justify-between pt-4 border-t border-border">
                       <div>
                         <p className="text-xs text-text-muted uppercase tracking-wider">
-                          Price ({vehicleType})
+                          {locale === "ar" 
+                            ? `السعر (${vehicleType === "sedan" ? "سيدان" : vehicleType === "suv" ? "سيارة عائلية" : "شاحنة"})` 
+                            : `Price (${vehicleType})`}
                         </p>
                         <p className="text-xl font-heading font-bold text-primary">
                           {formatPrice(price)}
@@ -210,7 +211,7 @@ export default function ServicesPage() {
 
         {!loading && filteredServices.length === 0 && (
           <div className="py-12 text-center text-text-muted text-sm">
-            No services available in this category.
+            {locale === "ar" ? "لا توجد خدمات متاحة في هذه الفئة." : "No services available in this category."}
           </div>
         )}
       </div>

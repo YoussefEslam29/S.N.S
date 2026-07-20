@@ -1,56 +1,26 @@
 "use client";
 
-import { useState } from "react";
-import { Star, Send, CheckCircle2, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Star, Send, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n";
 
-/* ─── Placeholder reviews (will be replaced with API data) ─── */
-const placeholderReviews = [
-  {
-    id: "1",
-    customerName: "Ahmed M.",
-    rating: 5,
-    text: "Best car wash in Alexandria! The ceramic coating made my car look brand new. Professional service and fair pricing.",
-    createdAt: "2025-06-15",
-  },
-  {
-    id: "2",
-    customerName: "Mohamed K.",
-    rating: 5,
-    text: "Got PPF installed on my BMW. Incredible quality work. The team really knows what they're doing with paint protection.",
-    createdAt: "2025-05-28",
-  },
-  {
-    id: "3",
-    customerName: "Sara A.",
-    rating: 5,
-    text: "Finally a car care shop that shows prices upfront. The full wash package at 300 EGP is excellent value. Will definitely be back!",
-    createdAt: "2025-06-01",
-  },
-  {
-    id: "4",
-    customerName: "Omar H.",
-    rating: 4,
-    text: "Great interior detailing service. They took their time with my Land Cruiser and the result was amazing. Only minor issue was the wait time.",
-    createdAt: "2025-05-10",
-  },
-  {
-    id: "5",
-    customerName: "Nour E.",
-    rating: 5,
-    text: "The ceramic window tint on my Tucson is perfect. Great heat rejection and the team was very professional. Highly recommend!",
-    createdAt: "2025-06-20",
-  },
-  {
-    id: "6",
-    customerName: "Hassan R.",
-    rating: 5,
-    text: "Had PPF installed on the full front end of my Mercedes. Flawless installation, no bubbles, invisible protection. Worth every pound.",
-    createdAt: "2025-04-22",
-  },
-];
+interface ReviewData {
+  _id: string;
+  customerName: string;
+  rating: number;
+  text: string;
+  createdAt: string;
+}
 
 export default function ReviewsPage() {
+  const { locale } = useLanguage();
+
+  // Reviews from API
+  const [reviews, setReviews] = useState<ReviewData[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(true);
+
+  // Form state
   const [formData, setFormData] = useState({
     customerName: "",
     rating: 0,
@@ -61,10 +31,30 @@ export default function ReviewsPage() {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
 
-  // Compute average rating
+  // Fetch approved reviews from the database
+  useEffect(() => {
+    async function fetchReviews() {
+      try {
+        setLoadingReviews(true);
+        const res = await fetch("/api/reviews");
+        if (!res.ok) throw new Error("Failed to fetch reviews");
+        const data = await res.json();
+        setReviews(data.data ?? []);
+      } catch {
+        // Silently fail — empty state will be shown
+        setReviews([]);
+      } finally {
+        setLoadingReviews(false);
+      }
+    }
+    fetchReviews();
+  }, []);
+
+  // Compute average rating from real data
   const avgRating =
-    placeholderReviews.reduce((sum, r) => sum + r.rating, 0) /
-    placeholderReviews.length;
+    reviews.length > 0
+      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+      : 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,59 +121,75 @@ export default function ReviewsPage() {
               {avgRating.toFixed(1)}
             </span>
             <span className="text-text-muted text-sm">
-              ({placeholderReviews.length} reviews)
+              ({reviews.length} {locale === "ar" ? "تقييم" : "reviews"})
             </span>
           </div>
           <p className="text-text-secondary max-w-lg mx-auto">
-            Real feedback from our customers. We're proud of every car we care
-            for.
+            {locale === "ar"
+              ? "تقييمات حقيقية من عملائنا. نحن نفخر بكل سيارة نعتني بها."
+              : "Real feedback from our customers. We're proud of every car we care for."}
           </p>
         </div>
 
         {/* Reviews Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
-          {placeholderReviews.map((review, i) => (
-            <div
-              key={review.id}
-              className="p-6 rounded-[4px] bg-surface border border-border hover:border-primary/20 transition-colors animate-fade-in-up"
-              style={{ animationDelay: `${i * 0.08}s` }}
-            >
-              {/* Rating */}
-              <div className="flex items-center gap-0.5 mb-3">
-                {[...Array(5)].map((_, j) => (
-                  <Star
-                    key={j}
-                    className={cn(
-                      "w-4 h-4",
-                      j < review.rating
-                        ? "fill-amber-400 text-amber-400"
-                        : "text-border"
-                    )}
-                  />
-                ))}
-              </div>
+        {loadingReviews ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-6 h-6 text-primary animate-spin" />
+          </div>
+        ) : reviews.length === 0 ? (
+          <div className="text-center py-16 mb-16 rounded-[4px] border border-border border-dashed bg-surface/30">
+            <Star className="w-10 h-10 mx-auto text-text-muted/30 mb-3" />
+            <p className="text-text-muted text-sm">
+              {locale === "ar"
+                ? "لا توجد تقييمات حتى الآن. كن أول من يترك تقييم!"
+                : "No reviews yet. Be the first to leave a review!"}
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+            {reviews.map((review, i) => (
+              <div
+                key={review._id}
+                className="p-6 rounded-[4px] bg-surface border border-border hover:border-primary/20 transition-colors animate-fade-in-up"
+                style={{ animationDelay: `${i * 0.08}s` }}
+              >
+                {/* Rating */}
+                <div className="flex items-center gap-0.5 mb-3">
+                  {[...Array(5)].map((_, j) => (
+                    <Star
+                      key={j}
+                      className={cn(
+                        "w-4 h-4",
+                        j < review.rating
+                          ? "fill-amber-400 text-amber-400"
+                          : "text-border"
+                      )}
+                    />
+                  ))}
+                </div>
 
-              {/* Review Text */}
-              <p className="text-sm text-text-secondary leading-relaxed mb-4">
-                &ldquo;{review.text}&rdquo;
-              </p>
+                {/* Review Text */}
+                <p className="text-sm text-text-secondary leading-relaxed mb-4">
+                  &ldquo;{review.text}&rdquo;
+                </p>
 
-              {/* Author & Date */}
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-text-primary">
-                  {review.customerName}
-                </p>
-                <p className="text-xs text-text-muted">
-                  {new Date(review.createdAt).toLocaleDateString("en", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </p>
+                {/* Author & Date */}
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-text-primary">
+                    {review.customerName}
+                  </p>
+                  <p className="text-xs text-text-muted">
+                    {new Date(review.createdAt).toLocaleDateString(locale, {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Leave a Review Section */}
         <div className="max-w-lg mx-auto">

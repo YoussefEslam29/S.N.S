@@ -18,7 +18,7 @@ interface GalleryItem {
 }
 
 const galleryItems: GalleryItem[] = [
-  // ─── Videos ───
+  // ─── Videos (real .mp4 files in /public/videos/) ───
   {
     id: "v1",
     title: "S.N.S Premium Car Care Experience",
@@ -54,55 +54,6 @@ const galleryItems: GalleryItem[] = [
     description: "Cinematic showcase of our finished projects looking brand new and protected.",
     src: "/videos/3-cc-edit-video-pro.mp4",
     isVideo: true,
-  },
-  // ─── Image placeholders ───
-  {
-    id: "1",
-    title: "BMW X5 — Full PPF Wrap",
-    category: "ppf",
-    vehicleType: "suv",
-    description: "Complete paint protection film applied to a BMW X5. Self-healing film protects against scratches and road debris.",
-    isVideo: false,
-  },
-  {
-    id: "2",
-    title: "Mercedes C-Class — Ceramic Coating",
-    category: "ceramic-coating",
-    vehicleType: "sedan",
-    description: "Multi-layer ceramic coating for maximum gloss and 3-year protection.",
-    isVideo: false,
-  },
-  {
-    id: "3",
-    title: "Toyota Land Cruiser — Interior Detail",
-    category: "detailing",
-    vehicleType: "truck",
-    description: "Deep interior cleaning, leather conditioning, and carpet extraction.",
-    isVideo: false,
-  },
-  {
-    id: "4",
-    title: "Hyundai Tucson — Window Tinting",
-    category: "tinting",
-    vehicleType: "suv",
-    description: "Premium ceramic window tint for heat rejection and UV protection.",
-    isVideo: false,
-  },
-  {
-    id: "5",
-    title: "Kia Cerato — Premium Wash",
-    category: "wash",
-    vehicleType: "sedan",
-    description: "Full inside-out wash with chemical wiping and motor cleaning.",
-    isVideo: false,
-  },
-  {
-    id: "6",
-    title: "Range Rover — PPF Front End",
-    category: "ppf",
-    vehicleType: "suv",
-    description: "Front bumper, hood, fenders, and mirrors protected with clear PPF.",
-    isVideo: false,
   },
 ];
 
