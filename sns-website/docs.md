@@ -134,3 +134,19 @@ We added system fixes to guarantee database connection success across any ISP an
        matcher: ["/admin/:path*"],
      };
      ```
+
+---
+
+## 10. Audit Implementation & Client Selector Refinement (error.md & Selector Fixes)
+We resolved all 6 core issues tracked in the error log and refined the client vehicle sizing options:
+* **Floating WhatsApp Button**: Added a floating green contact button (`wa.me/201285476014`) using Tailwind's logical positioning class (`end-6`) for smooth LTR/RTL rendering. Mounted with a 3.5s delay to keep from flashing over the logo intro animation.
+* **Gallery Image Clean Up**: Removed the hardcoded sparkle image placeholders from the gallery portfolio, leaving only the 4 authentic high-definition video showreels.
+* **Reviews Database Wiring**: Replaced the mock reviews array with a dynamic fetch to `/api/reviews` inside `ReviewsPage`. Added full loading and empty state components.
+* **Arabic Layout & RTL Correction**:
+  * Added flex direction, start/end alignment, and flipped slide-in animation keyframes for RTL layouts inside [globals.css](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/app/globals.css).
+  * Flipped hero text slide animations inside [page.tsx](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/app/page.tsx) based on whether `isRTL` is active.
+  * Localized hardcoded English headings and text strings on the public services page.
+* **Database Seeding**: Verified the seed state of the admin dashboard and successfully loaded all 5 main services with customized prices and duration values.
+* **Truck / Van Vehicle Removal**: Removed the Large sizing choice (`type: "truck"`) from [VehicleSelector.tsx](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/components/services/VehicleSelector.tsx), limiting client vehicle types to **Sedan** and **SUV** across the landing page, services page, and booking wizard.
+* **React List Unique Key Fix**: Resolved a React console warning (`Each child in a list should have a unique "key" prop`) inside [page.tsx (Admin Services)](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/app/admin/services/page.tsx) by importing React's `<Fragment>` and passing the unique `service._id` as a key parameter directly onto `<Fragment key={service._id}>` instead of the empty shorthand fragments (`<>...</>`) which don't support custom key attributes.
+

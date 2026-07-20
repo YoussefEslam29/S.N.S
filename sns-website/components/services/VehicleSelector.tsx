@@ -15,7 +15,6 @@ interface VehicleSelectorProps {
 const vehicles: { type: VehicleType; label: string; icon: string }[] = [
   { type: "sedan", label: "Sedan", icon: "🚗" },
   { type: "suv", label: "SUV", icon: "🚙" },
-  { type: "truck", label: "Truck / Van", icon: "🚐" },
 ];
 
 /** Vehicle type selector — updates pricing across the entire page. */

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Fragment } from "react";
 import {
   Plus,
   Pencil,
@@ -392,8 +392,8 @@ export default function AdminServicesPage() {
             </thead>
             <tbody className="divide-y divide-border">
               {filtered.map((service) => (
-                <>
-                  <tr key={service._id} className="hover:bg-surface-elevated/30 transition-colors">
+                <Fragment key={service._id}>
+                  <tr className="hover:bg-surface-elevated/30 transition-colors">
                     <td className="px-4 py-3">
                       <p className="font-medium text-text-primary">{service.name.en}</p>
                       <p className="text-xs text-text-muted mt-0.5 font-arabic" dir="rtl">{service.name.ar}</p>
@@ -520,7 +520,7 @@ export default function AdminServicesPage() {
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               ))}
             </tbody>
           </table>
