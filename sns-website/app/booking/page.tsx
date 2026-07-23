@@ -17,6 +17,9 @@ import {
   CheckCircle2,
   Loader2,
   AlertCircle,
+  MessageCircle,
+  HelpCircle,
+  ExternalLink,
 } from "lucide-react";
 import { VehicleSelector, type VehicleType } from "@/components/services/VehicleSelector";
 import { formatPrice, cn } from "@/lib/utils";
@@ -234,8 +237,16 @@ function BookingContent() {
         : `${hour}:00 AM`
       : selectedTime;
 
+    const serviceName = selectedService ? (locale === "ar" ? selectedService.name.ar : selectedService.name.en) : "";
+    const whatsappMsg = encodeURIComponent(
+      locale === "ar"
+        ? `مرحباً! لقد حجزت خدمة (${serviceName}) باسم ${customerInfo.name} بتاريخ ${formattedDate} الساعة ${formattedTime}. أرغب في الدفع عبر واتساب.`
+        : `Hello! I just booked (${serviceName}) under the name ${customerInfo.name} for ${formattedDate} at ${formattedTime}. I would like to pay via WhatsApp.`
+    );
+    const whatsappUrl = `https://wa.me/201285476014?text=${whatsappMsg}`;
+
     return (
-      <div className="py-20 md:py-32">
+      <div className="py-16 md:py-24">
         <div className="container-sns max-w-lg text-center space-y-6">
           <div className="w-20 h-20 mx-auto flex items-center justify-center rounded-full bg-success/10 animate-scale-in">
             <CheckCircle2 className="w-10 h-10 text-success" />
@@ -278,19 +289,58 @@ function BookingContent() {
               </>
             )}
           </p>
-          <p className="text-xs text-text-muted">
+
+          {/* Payment action prompt */}
+          <div className="p-5 rounded-[4px] bg-surface-elevated border border-border text-left space-y-3" dir={locale === "ar" ? "rtl" : "ltr"}>
+            <p className="text-xs font-semibold text-text-primary uppercase tracking-wider">
+              {locale === "ar" ? "خطوة الدفع القادمة:" : "Next Step — Payment Options:"}
+            </p>
+            <p className="text-xs text-text-secondary leading-relaxed">
+              {paymentMethod === "digital"
+                ? (locale === "ar" ? "اخترت الدفع الإلكتروني. تواصل مع المالك مباشرة عبر واتساب لإتمام التحويل وتأكيد الحجز." : "You selected digital payment. Contact the owner directly on WhatsApp to complete transfer & confirm.")
+                : paymentMethod === "installments"
+                ? (locale === "ar" ? "اخترت التقسيط. راسل المالك على واتساب للاتفاق على جدول الدفعات." : "You selected installments. Message the owner on WhatsApp to arrange your payment schedule.")
+                : (locale === "ar" ? "اخترت الدفع نقداً. نتطلع لاستقبالك في الفرع يوم الخدمة!" : "You selected cash payment. We look forward to seeing you at our Smouha shop!")}
+            </p>
+
+            {(paymentMethod === "digital" || paymentMethod === "installments") && (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center justify-center gap-2 h-10 px-4 bg-success hover:bg-success/90 text-white font-semibold rounded-[4px] text-xs transition-colors shadow-sm"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>{t("payment.payViaWhatsApp")}</span>
+                <ExternalLink className="w-3.5 h-3.5 opacity-80" />
+              </a>
+            )}
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <Link
+              href="/payment"
+              target="_blank"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 h-10 px-5 bg-surface-elevated hover:bg-surface-hover border border-border text-text-secondary hover:text-text-primary rounded-[4px] text-xs font-medium transition-colors"
+            >
+              <HelpCircle className="w-4 h-4 text-primary" />
+              <span>{t("payment.learnMore")}</span>
+            </Link>
+            <Link
+              href="/"
+              className="w-full sm:w-auto inline-flex items-center justify-center h-10 px-6 bg-primary hover:bg-primary-hover text-white font-semibold rounded-[4px] text-xs transition-colors"
+            >
+              {t("booking.backToHome")}
+            </Link>
+          </div>
+
+          <p className="text-[11px] text-text-muted">
             {t("booking.successNote")}{" "}
             <a href="tel:+201153353362" className="text-primary font-semibold">
               0115 335 3362
             </a>
             .
           </p>
-          <Link
-            href="/"
-            className="inline-flex items-center justify-center h-10 px-6 bg-primary hover:bg-primary-hover text-white font-semibold rounded-[4px] text-sm transition-colors"
-          >
-            {t("booking.backToHome")}
-          </Link>
         </div>
       </div>
     );
@@ -493,10 +543,24 @@ function BookingContent() {
                 {t("booking.paymentPrompt")}
               </h2>
               {[
-                { id: "cash" as const, label: locale === "ar" ? "نقداً في المركز" : "Cash at the Shop", desc: locale === "ar" ? "ادفع عند زيارتك للمركز" : "Pay when you visit" },
-                { id: "digital" as const, label: locale === "ar" ? "دفع إلكتروني" : "Digital Payment", desc: locale === "ar" ? "ادفع عبر فودافون كاش، إنستا باي، أو بطاقة الائتمان" : "Pay with Vodafone Cash, InstaPay, or card" },
+                {
+                  id: "cash" as const,
+                  label: t("payment.cash"),
+                  desc: t("payment.cashDesc"),
+                },
+                {
+                  id: "digital" as const,
+                  label: t("payment.whatsapp"),
+                  desc: t("payment.whatsappDesc"),
+                },
                 ...(selectedService?.installmentsAllowed
-                  ? [{ id: "installments" as const, label: locale === "ar" ? `تقسيط (3 دفعات)` : `Installments (3 Payments)`, desc: locale === "ar" ? `3 × ${formatPrice(Math.ceil(price / 3))} شهرياً` : `3 × ${formatPrice(Math.ceil(price / 3))} monthly` }]
+                  ? [
+                      {
+                        id: "installments" as const,
+                        label: locale === "ar" ? "تقسيط (3 دفعات)" : "Installments (3 Payments)",
+                        desc: locale === "ar" ? "لـ PPF فقط — اتفق على جدول الدفعات مع المالك عبر واتساب" : "For PPF only — arrange payment schedule with owner on WhatsApp",
+                      },
+                    ]
                   : []),
               ].map((method) => (
                 <button
@@ -517,6 +581,18 @@ function BookingContent() {
                   {paymentMethod === method.id && <Check className="w-5 h-5 text-primary" />}
                 </button>
               ))}
+
+              <div className="pt-2 text-center">
+                <Link
+                  href="/payment"
+                  target="_blank"
+                  className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+                >
+                  <HelpCircle className="w-3.5 h-3.5" />
+                  <span>{t("payment.learnMore")}</span>
+                  <ExternalLink className="w-3 h-3 opacity-70" />
+                </Link>
+              </div>
             </div>
           )}
 

@@ -154,6 +154,22 @@ const translations: Record<string, Record<Locale, string>> = {
   "booking.noSlots": { en: "No slots available for this date. Please choose another date.", ar: "لا توجد مواعيد متاحة في هذا اليوم. يرجى اختيار تاريخ آخر." },
   "booking.closedFriday": { en: "Closed on Friday. Please select another day.", ar: "مغلق يوم الجمعة. يرجى اختيار يوم آخر." },
 
+  // ── Payment Page & Options ──
+  "payment.badge": { en: "Simple & Secure", ar: "بسيط وآمن" },
+  "payment.title": { en: "Pay Your Way", ar: "ادفع بطريقتك" },
+  "payment.subtitle": { en: "Choose how you'd like to settle your service — no online payment forms, no fuss.", ar: "اختر طريقة دفعك — بدون نماذج دفع إلكترونية، بدون تعقيد." },
+  "payment.whatsapp": { en: "WhatsApp Payment", ar: "الدفع عبر واتساب" },
+  "payment.whatsappDesc": { en: "Message the owner on WhatsApp, confirm your service, and send your transfer screenshot.", ar: "راسل المالك على واتساب، أكد خدمتك، وأرسل صورة التحويل." },
+  "payment.cash": { en: "Cash at the Shop", ar: "نقداً في المركز" },
+  "payment.cashDesc": { en: "Pay in full on the day of service at our Smouha location. No deposit needed.", ar: "ادفع كاملاً يوم الخدمة في مركزنا بسموحة. لا يوجد دفعة مقدمة." },
+  "payment.whatsappCta": { en: "WhatsApp Us Now", ar: "راسلنا على واتساب" },
+  "payment.cashCta": { en: "Get Directions", ar: "احصل على الاتجاهات" },
+  "payment.infoTitle": { en: "Questions or Installments?", ar: "أسئلة أو تقسيط؟" },
+  "payment.infoDesc": { en: "For PPF installment plans or any payment questions, message us on WhatsApp — the owner answers personally.", ar: "لخطط تقسيط PPF أو أي أسئلة عن الدفع، راسلنا على واتساب — المالك يرد شخصياً." },
+  "payment.bookCta": { en: "Ready to Book?", ar: "جاهز للحجز؟" },
+  "payment.learnMore": { en: "Learn more about payment options", ar: "اعرف المزيد عن خيارات الدفع" },
+  "payment.payViaWhatsApp": { en: "Pay via WhatsApp Now", ar: "ادفع عبر واتساب الآن" },
+
   // ── Language Toggle ──
   "lang.switch": { en: "عربي", ar: "English" },
 };

@@ -78,6 +78,7 @@ export function Footer() {
               {[
                 { href: "/services", labelKey: "footer.ourServices" },
                 { href: "/booking", labelKey: "footer.bookAppointment" },
+                { href: "/payment", labelKey: "payment.title" },
                 { href: "/gallery", labelKey: "nav.gallery" },
               ].map((link) => (
                 <li key={link.href}>

@@ -151,4 +151,22 @@ We resolved all 6 core issues tracked in the error log and refined the client ve
 * **React List Unique Key Fix**: Resolved a React console warning (`Each child in a list should have a unique "key" prop`) inside [page.tsx (Admin Services)](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/app/admin/services/page.tsx) by importing React's `<Fragment>` and passing the unique `service._id` as a key parameter directly onto `<Fragment key={service._id}>` instead of the empty shorthand fragments (`<>...</>`) which don't support custom key attributes.
 * **Navbar Active Link Highlights**: Updated [Navbar.tsx](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/components/layout/Navbar.tsx) using Next.js `usePathname()` to highlight the currently active section. Desktop links remain highlighted in `text-primary` with a persistent underline bar (`w-full`), and mobile menu links receive a distinct background fill (`bg-primary/5`) and colored text for a premium interactive feel.
 
+---
+
+## 11. Payment System & Direct WhatsApp Flow (payments.md Plan)
+Implemented a zero-risk, no-form payment workflow in accordance with [payments.md](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/THE_PLANS/payments.md):
+* **No Online Payment Forms**: Payments bypass on-site credit card collection, ensuring total data privacy without security or PCI compliance risks.
+* **Standalone Payment Page**: Created [page.tsx (Payment)](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/app/payment/page.tsx) featuring a glassmorphic comparison of the two accepted payment methods:
+  * **WhatsApp Payment**: Digital transfers via Vodafone Cash, InstaPay, or mobile wallets with direct chat confirmation (`+20 128 547 6014`).
+  * **Cash at Shop**: In-person payment upon service completion at Smouha, with direct Google Maps integration.
+* **Booking Wizard Integration**:
+  * Updated Step 4 of [page.tsx (Booking)](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/app/booking/page.tsx) with explicit descriptions for WhatsApp digital transfer vs. cash on-site.
+  * Added a direct link to the payment options info page (`/payment`).
+* **Post-Booking WhatsApp Transfer CTA**:
+  * Enhanced the booking confirmation screen to generate an automated, pre-filled WhatsApp message URL containing the customer's name, booked service, date, and time slot.
+  * Tapping "Pay via WhatsApp Now" immediately launches WhatsApp with prefilled booking info ready to send to the owner.
+* **Internationalization**: Added complete English & Arabic translations for all payment keys inside [i18n.tsx](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/lib/i18n.tsx).
+* **Footer Navigation**: Added a "Pay Your Way" link to [Footer.tsx](file:///d:/4%29%20projects/Websites/S.N.S%20CARWASH/S.N.S/sns-website/components/layout/Footer.tsx) under Quick Links.
+
+
 
